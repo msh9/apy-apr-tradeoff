@@ -1,41 +1,17 @@
 {
   "name": "apy-apr-tradeoff",
-  "version": "0.1.0",
   "private": true,
-  "description": "Toolkit for comparing installment loans, cash discounts, and rewards card strategies.",
+  "version": "0.0.0",
   "type": "module",
-  "main": "src/math/loan-math.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest",
-    "lint": "eslint ."
-  },
-  "keywords": [
-    "loan",
-    "apy",
-    "apr",
-    "lit"
-  ],
-  "author": "Michael Hughes",
-  "license": "MIT",
-  "engines": {
-    "node": ">=20.11.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-lit": "^5.0.0",
-    "eslint": "^9.13.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-lit": "^1.10.1",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "prettier": "^3.3.3",
-    "vite": "^5.1.0",
-    "vitest": "^1.6.0"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "lit": "^3.1.0"
+    "lit": "^3.3.1"
+  },
+  "devDependencies": {
+    "vite": "^7.1.7"
   }
 }
