@@ -12,7 +12,7 @@ The calculator does make some simplifying assumptions. Namely,
 2. Loans are simple (ie not compounded) and fixed term
 3. Deposit accounts accrue and compound interest daily
 4. When using a credit card, the purchase is fully paid off within the next statement cycle so that the cardholder does not owe interest
-5. A buyer using a credit card or loan will pay the same purchase price, *unless* there is an explicit credit card fee that increases the effective purchase price when using a credit card
+5. A buyer using a credit card or loan will pay the same purchase price, _unless_ there is an explicit credit card fee that increases the effective purchase price when using a credit card
 
 ## Inputs
 
