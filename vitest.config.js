@@ -4,5 +4,11 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.js'],
     environment: 'node',
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
   },
 });

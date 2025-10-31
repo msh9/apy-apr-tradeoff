@@ -10,7 +10,7 @@ export default [
     ignores: ['dist/**', 'node_modules/**'],
   },
   {
-    files: ['**/*.js'],
+    files: ['**/*.js', '**/*.mjs'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
@@ -24,7 +24,7 @@ export default [
   eslintPluginImport.flatConfigs.recommended,
   prettierConfig,
   {
-    files: ['**/*.js'],
+    files: ['**/*.js', '**/*.mjs'],
     plugins: {
       lit: eslintPluginLit,
       prettier: eslintPluginPrettier,
