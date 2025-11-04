@@ -5,6 +5,27 @@
  */
 import { defaults } from './constants';
 
+function assertAmount(candidate) {
+  if (!(candidate instanceof Amount)) {
+    throw new Error('other must be an Amount');
+  }
+};
+
+function scaleIntegerValue(integerValue, currentPrecision, targetPrecision) {
+  if (currentPrecision === targetPrecision) {
+    return integerValue;
+  }
+
+  const precisionDiff = targetPrecision - currentPrecision;
+
+  if (precisionDiff > 0) {
+    return integerValue * 10 ** precisionDiff;
+  }
+
+  const divisor = 10 ** Math.abs(precisionDiff);
+  return Math.trunc(integerValue / divisor);
+};
+
 /**
  * @class Amount
  * Represents a specific monetary value, ie $18.43
@@ -16,8 +37,14 @@ class Amount {
    * @param {integerValue} precision How many places after the decimal to retain and matain calculation accuracy
    */
   constructor(value, precision = defaults.ioPrecision) {
+    if (Number.isNaN(value) || !Number.isFinite(value)) {
+      throw new Error('Value must be a finite number');
+    }
+
     this.precision = precision;
-    this.integerValue = Math.trunc((value * 10) ^ this.precision);
+
+    const scale = 10 ** this.precision;
+    this.integerValue = Math.trunc(value * scale);
   }
 
   get precision() {
@@ -25,13 +52,19 @@ class Amount {
   }
 
   set precision(precision) {
-    if (Number.isInteger(this.precision)) {
-        throw new Error('Precision may not be changed');
-    } else if (!Number.isInteger(precision)) {
-        throw new Error('Precision must be an integer number');
-    } else {
-        this._precision = precision;
+    if (!Number.isInteger(precision)) {
+      throw new Error('Precision must be an integer number');
     }
+
+    if (precision < 0) {
+      throw new Error('Precision must be zero or greater');
+    }
+
+    if (this._precision !== undefined) {
+      throw new Error('Precision may not be changed');
+    }
+
+    this._precision = precision;
   }
 
   /**
@@ -40,9 +73,28 @@ class Amount {
    * @returns {Amount}
    */
   addTo(other) {
-    if ((!other) instanceof Amount) {
-      throw new Error('other must be an Amount');
+    assertAmount(other);
+
+    const targetPrecision = Math.min(this.precision, other.precision);
+
+    if (this.precision !== targetPrecision) {
+      this.integerValue = scaleIntegerValue(
+        this.integerValue,
+        this.precision,
+        targetPrecision,
+      );
+      this._precision = targetPrecision;
     }
+
+    const otherValue = scaleIntegerValue(
+      other.integerValue,
+      other.precision,
+      targetPrecision,
+    );
+
+    this.integerValue += otherValue;
+
+    return this;
   }
 
   /**
@@ -51,9 +103,28 @@ class Amount {
    * @returns {Amount}
    */
   subtractFrom(other) {
-    if ((!other) instanceof Amount) {
-      throw new Error('other must be an Amount');
+    assertAmount(other);
+
+    const targetPrecision = Math.min(this.precision, other.precision);
+
+    if (this.precision !== targetPrecision) {
+      this.integerValue = scaleIntegerValue(
+        this.integerValue,
+        this.precision,
+        targetPrecision,
+      );
+      this._precision = targetPrecision;
     }
+
+    const otherValue = scaleIntegerValue(
+      other.integerValue,
+      other.precision,
+      targetPrecision,
+    );
+
+    this.integerValue -= otherValue;
+
+    return this;
   }
 
   /**
@@ -62,9 +133,31 @@ class Amount {
    * @returns {Amount}
    */
   multiplyBy(other) {
-    if ((!other) instanceof Amount) {
-      throw new Error('other must be an Amount');
+    assertAmount(other);
+
+    const targetPrecision = Math.min(this.precision, other.precision);
+
+    if (this.precision !== targetPrecision) {
+      this.integerValue = scaleIntegerValue(
+        this.integerValue,
+        this.precision,
+        targetPrecision,
+      );
+      this._precision = targetPrecision;
     }
+
+    const otherValue = scaleIntegerValue(
+      other.integerValue,
+      other.precision,
+      targetPrecision,
+    );
+
+    const scale = 10 ** targetPrecision;
+    const product = this.integerValue * otherValue;
+
+    this.integerValue = Math.round(product / scale);
+
+    return this;
   }
 
   /**
@@ -73,9 +166,33 @@ class Amount {
    * @returns {Amount}
    */
   raiseBy(other) {
-    if ((!other) instanceof Amount) {
-      throw new Error('other must be an Amount');
+    assertAmount(other);
+
+    const targetPrecision = Math.min(this.precision, other.precision);
+
+    if (this.precision !== targetPrecision) {
+      this.integerValue = scaleIntegerValue(
+        this.integerValue,
+        this.precision,
+        targetPrecision,
+      );
+      this._precision = targetPrecision;
     }
+
+    const alignedExponent = scaleIntegerValue(
+      other.integerValue,
+      other.precision,
+      targetPrecision,
+    );
+
+    const scale = 10 ** targetPrecision;
+    const baseDecimal = this.integerValue / scale;
+    const exponentDecimal = alignedExponent / scale;
+    const resultDecimal = baseDecimal ** exponentDecimal;
+
+    this.integerValue = Math.round(resultDecimal * scale);
+
+    return this;
   }
 }
 
