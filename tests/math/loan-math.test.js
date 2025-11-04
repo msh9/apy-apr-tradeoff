@@ -35,7 +35,7 @@ describe('calculations on zero APR loans starting "TODAY"', () => {
 
     expect(result.loan.paymentSchedule).toHaveLength(6);
     expect(result.loan.totalInterest).toBe(0);
-    expect(result.loan.paymentPerPeriod).toBeCloseTo(4210.54,2);
+    expect(result.loan.paymentPerPeriod).toBeCloseTo(4210.54, 2);
     expect(result.savings.totalInterestEarned).toBeCloseTo(364.15, 2);
     expect(result.comparison.netBenefitVsCash).toBeCloseTo(364.15, 2);
     expect(result.comparison.additionalOutOfPocket).toBe(0);
@@ -45,10 +45,9 @@ describe('calculations on zero APR loans starting "TODAY"', () => {
     expect(finalPeriod.externalContribution).toBe(0);
   });
 
-
   it('calculates zero savings lift APY are zero', () => {
     const result = calculateLoanWithSavings({
-      principal: 1000000.00,
+      principal: 1000000.0,
       termCount: 500,
       period: 'monthly',
       aprPercent: 0,
@@ -56,9 +55,9 @@ describe('calculations on zero APR loans starting "TODAY"', () => {
     });
 
     expect(result.loan.paymentSchedule).toHaveLength(500);
-    expect(result.loan.paymentPerPeriod).toBe(1000000/500);
+    expect(result.loan.paymentPerPeriod).toBe(1000000 / 500);
     expect(result.comparison.netBenefitVsCash).toBe(0);
-  })
+  });
 
   it('calculates savings lift on small dollar loans', () => {
     const result = calculateLoanWithSavings({
@@ -70,10 +69,10 @@ describe('calculations on zero APR loans starting "TODAY"', () => {
     });
 
     expect(result.loan.paymentSchedule).toHaveLength(6);
-    expect(result.loan.paymentPerPeriod).toBeCloseTo(2.25,2);
+    expect(result.loan.paymentPerPeriod).toBeCloseTo(2.25, 2);
     expect(result.comparison.netBenefitVsCash).toBeCloseTo(0.19, 2);
     expect(result.savings.totalInterestEarned).toBeCloseTo(0.19, 2);
-  })
+  });
 });
 
 describe('calculate function validate inputs', () => {
