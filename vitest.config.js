@@ -4,6 +4,6 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.js'],
     environment: 'node',
-    pool: 'threads'
+    pool: 'threads',
   },
 });
