@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { calculateLoanWithSavings } from '../../src/math/loan-math.js';
 
-describe('calculations on zero APR loans', () => {
+describe('calculations on zero APR loans starting "TODAY"', () => {
   it('calculates savings lift on loans on 6-month term', () => {
     const result = calculateLoanWithSavings({
       principal: 1200,

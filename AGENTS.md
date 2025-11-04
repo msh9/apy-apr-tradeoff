@@ -10,7 +10,7 @@ The web component should be built with `lit` tooling, include reasonable light/d
 
 - `src/` contains source code for the project
 - `tests/` mirrors `src/` folder names so every helper or component ships with a matching spec (e.g., `src/state/loan-math.js` ↔ `tests/state/loan-math.test.js`).
-- `docs/` and the `README.md` file host user-facing notes (eg `docs/loan-scenarios.md`)
+- `README.md` file hosts user-facing notes
 
 ## Build, Test, and Development Commands
 
@@ -24,7 +24,7 @@ The web component should be built with `lit` tooling, include reasonable light/d
 - Use ES modules, 2-space indentation, and single quotes for strings unless template literals add clarity.
 - Pure helpers live in `loan-math.js` with named exports; DOM-manipulating files end with `.ui.js` to signal side effects.
 - Run `npm run lint` (ESLint + Prettier) before opening a pull request; config enforces no implicit globals and browser-safe APIs only.
-- As needed and when appropriate write javascript appropriate for accurately handling monetary amounts. This means full precision calculations, rounding only when displaying final results. It also means avoiding floating point math where possible.
+- As needed and when appropriate write javascript appropriate for accurately handling monetary amounts. This means full precision calculations, rounding only when displaying final results. It also means avoiding floating point math where possible including using approaches that convert all numbers to integers and performing integer math.
 
 ## Testing Guidelines
 

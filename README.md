@@ -10,26 +10,20 @@ The calculator does make some simplifying assumptions. Namely,
 
 1. Loans are either monthly or weekly periods
 2. Loans are simple (ie not compounded) and fixed term
-3. Deposit accounts accrue and compound interest daily
+3. Deposit accounts accrue and compound interest daily 
 4. When using a credit card, the purchase is fully paid off within the next statement cycle so that the cardholder does not owe interest
 5. A buyer using a credit card or loan will pay the same purchase price, _unless_ there is an explicit credit card fee that increases the effective purchase price when using a credit card
 
-## Inputs
+## Usages and inputs
 
-The main inputs to the calculator are,
+The calculator exposes a few different convenience functions with similar options for comparing purchase methods. The different functions expose different ways of handling interest expense and accrual over time. This is needed for to handle real work deposit and loan accounts where payment dates may not align or accounts may be on different accrual schedules, for example,
 
-1. Purchase Price
-2. Loan term and type (ie 6-months/monthly or 6 weeks/weekly, etc)
-3. 'Cash' purchase discount, defaults to 0% (ie how much to discount the purchase price by if the buyer uses EFT/ACH/cash/etc)
-4. Loan APR as a percentage
-5. Deposit account APY as a percentage
-6. Effective credit card rewards rate as a percentage
-7. Credit card fee as a percentage
+1. A loan with a non-compounding, weekly payment period loan backed by a daily compounding deposit account
+2. A loan with a non-compounding monthly payment period that is unaligned with a daily compounting, monthly paying deposit account (ie loan payments are owed every 17th of the month and deposit interest is deposited at the end of the month).
 
-## Outputs
+We handle these scenarios and other via two different methodologies.
 
-The main calculator outputs are,
+1. Idealized world which assumes every month is 31 days (note well: that means a 372 day year...), monthly loans have payments due at the end of the 31-day month, and deposit account interest is deposited also at the end of the 31-day month. Furthermore, the deposit account daily accrual rate is calculated as 1/365 of the APY.
+2. Real world which requires that the end user provide a starting date for calculations. With a starting date the calculator then figures the actual number of days/weeks/months etc for loan and deposit accounts.
 
-1. The most efficient purchase type between loan, card, cash, etc in terms of reducing effective purchase cost
-2. The monthly yield and payment schedule when using a loan with a high yield savings account
-3. The difference in effective purchase cost reduction between credit card rewards and loans
+Underneath the aforementioned convenience functions, we expose functions for calculating simple term loan interest, deposit account accruals, and related data.
