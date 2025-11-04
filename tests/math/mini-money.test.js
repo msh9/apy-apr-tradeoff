@@ -37,7 +37,7 @@ describe('mini-money Amount', () => {
 
     it('reduces more precise values before adding', () => {
       const lhs = new Amount(10.15, 2);
-      const rhs = new Amount(0.1200, 4);
+      const rhs = new Amount(0.12, 4);
 
       lhs.addTo(rhs);
 
@@ -47,7 +47,7 @@ describe('mini-money Amount', () => {
     });
 
     it('lowers this amount precision when adding less precise values', () => {
-      const lhs = new Amount(12.3400, 4);
+      const lhs = new Amount(12.34, 4);
       const rhs = new Amount(7.89, 2);
 
       lhs.addTo(rhs);
@@ -77,7 +77,7 @@ describe('mini-money Amount', () => {
     });
 
     it('lowers precision when subtracting a less precise amount', () => {
-      const lhs = new Amount(5.3400, 4);
+      const lhs = new Amount(5.34, 4);
       const rhs = new Amount(1.23, 2);
 
       lhs.subtractFrom(rhs);

@@ -1,7 +1,7 @@
 /**
- * @module mini-money
  * Provides a small library for processing currency values accurately and avoids use of floating point
  * mathematics for monetary values.
+ * @module mini-money
  */
 import { defaults } from './constants';
 
@@ -9,7 +9,7 @@ function assertAmount(candidate) {
   if (!(candidate instanceof Amount)) {
     throw new Error('other must be an Amount');
   }
-};
+}
 
 function scaleIntegerValue(integerValue, currentPrecision, targetPrecision) {
   if (currentPrecision === targetPrecision) {
@@ -24,15 +24,14 @@ function scaleIntegerValue(integerValue, currentPrecision, targetPrecision) {
 
   const divisor = 10 ** Math.abs(precisionDiff);
   return Math.trunc(integerValue / divisor);
-};
+}
 
 /**
- * @class Amount
  * Represents a specific monetary value, ie $18.43
+ * @class Amount
  */
 class Amount {
   /**
-   *
    * @param {number} value The monetary value to represent
    * @param {integerValue} precision How many places after the decimal to retain and matain calculation accuracy
    */
@@ -68,7 +67,9 @@ class Amount {
   }
 
   /**
-   * @method addTo adds an amount to this amount, adding an amount of greater precision with first reduce that amounts precision, adding an amount of lower precision to this amount will lower **this** amount's precision.
+   * adds an amount to this amount, adding an amount of greater precision with first reduce that amounts
+   * precision, adding an amount of lower precision to this amount will lower **this** amount's precision.
+   * @method addTo
    * @param {Amount} other The other amount to add to this amount, updating this amount
    * @returns {Amount}
    */
@@ -78,19 +79,11 @@ class Amount {
     const targetPrecision = Math.min(this.precision, other.precision);
 
     if (this.precision !== targetPrecision) {
-      this.integerValue = scaleIntegerValue(
-        this.integerValue,
-        this.precision,
-        targetPrecision,
-      );
+      this.integerValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
       this._precision = targetPrecision;
     }
 
-    const otherValue = scaleIntegerValue(
-      other.integerValue,
-      other.precision,
-      targetPrecision,
-    );
+    const otherValue = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
 
     this.integerValue += otherValue;
 
@@ -98,7 +91,9 @@ class Amount {
   }
 
   /**
-   * @method subtractFrom removes an amount from this amount, removing an amount of greater precision will first reduce that amounts precision, removing an amount of lower precision from this amount will lower **this** amount's precision.
+   * removes an amount from this amount, removing an amount of greater precision will first reduce that amounts
+   * precision, removing an amount of lower precision from this amount will lower **this** amount's precision.
+   * @method subtractFrom
    * @param {Amount} other The other amount to subtract from this amount, updating this amount
    * @returns {Amount}
    */
@@ -108,19 +103,11 @@ class Amount {
     const targetPrecision = Math.min(this.precision, other.precision);
 
     if (this.precision !== targetPrecision) {
-      this.integerValue = scaleIntegerValue(
-        this.integerValue,
-        this.precision,
-        targetPrecision,
-      );
+      this.integerValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
       this._precision = targetPrecision;
     }
 
-    const otherValue = scaleIntegerValue(
-      other.integerValue,
-      other.precision,
-      targetPrecision,
-    );
+    const otherValue = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
 
     this.integerValue -= otherValue;
 
@@ -128,7 +115,9 @@ class Amount {
   }
 
   /**
-   * @method multiplyBy multiplies this amount by the other amount, an amount of greater precision will first be reduced to this amount's precision, an amount of lower precision from this amount will lower **this** amount's precision.
+   * multiplies this amount by the other amount, an amount of greater precision will first be reduced to this amount's
+   * precision, an amount of lower precision from this amount will lower **this** amount's precision.
+   * @method multiplyBy
    * @param {Amount} other The other amount to multiply by this amount, updating this amount
    * @returns {Amount}
    */
@@ -138,19 +127,11 @@ class Amount {
     const targetPrecision = Math.min(this.precision, other.precision);
 
     if (this.precision !== targetPrecision) {
-      this.integerValue = scaleIntegerValue(
-        this.integerValue,
-        this.precision,
-        targetPrecision,
-      );
+      this.integerValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
       this._precision = targetPrecision;
     }
 
-    const otherValue = scaleIntegerValue(
-      other.integerValue,
-      other.precision,
-      targetPrecision,
-    );
+    const otherValue = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
 
     const scale = 10 ** targetPrecision;
     const product = this.integerValue * otherValue;
@@ -161,7 +142,10 @@ class Amount {
   }
 
   /**
-   * @method raiseBy raises (exponent) this amount by the other amount, an amount of greater precision will first be reduced to this amount's precision, an amount of lower precision from this amount will lower **this** amount's precision.
+   * raises (exponent) this amount by the other amount, an amount of greater precision will first be
+   * reduced to this amount's precision, an amount of lower precision from this amount will lower **this** amount's
+   * precision.
+   * @method raiseBy
    * @param {Amount} other The other amount to raise this amount, updating this amount
    * @returns {Amount}
    */
@@ -171,19 +155,11 @@ class Amount {
     const targetPrecision = Math.min(this.precision, other.precision);
 
     if (this.precision !== targetPrecision) {
-      this.integerValue = scaleIntegerValue(
-        this.integerValue,
-        this.precision,
-        targetPrecision,
-      );
+      this.integerValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
       this._precision = targetPrecision;
     }
 
-    const alignedExponent = scaleIntegerValue(
-      other.integerValue,
-      other.precision,
-      targetPrecision,
-    );
+    const alignedExponent = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
 
     const scale = 10 ** targetPrecision;
     const baseDecimal = this.integerValue / scale;
