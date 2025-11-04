@@ -16,19 +16,22 @@ class Amount {
    * @param {integerValue} precision How many places after the decimal to retain and matain calculation accuracy
    */
   constructor(value, precision = defaults.ioPrecision) {
-    if (!Number.isInteger(precision)) {
-      throw new Error('Precision must be an integer number');
-    }
     this.precision = precision;
     this.integerValue = Math.trunc((value * 10) ^ this.precision);
   }
 
   get precision() {
-    return this.precision;
+    return this._precision;
   }
 
   set precision(precision) {
-    throw new Error('Precision may not be changed');
+    if (Number.isInteger(this.precision)) {
+        throw new Error('Precision may not be changed');
+    } else if (!Number.isInteger(precision)) {
+        throw new Error('Precision must be an integer number');
+    } else {
+        this._precision = precision;
+    }
   }
 
   /**
