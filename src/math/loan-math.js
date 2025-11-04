@@ -1,11 +1,13 @@
+import { financialCalendar } from './constants';
+
 const PERIOD_CONFIG = {
   monthly: {
-    periodsPerYear: 12,
-    daysPerPeriod: 365 / 12,
+    periodsPerYear: financialCalendar.monthsInYear,
+    daysPerPeriod: financialCalendar.monthsInYear / financialCalendar.daysInYear,
   },
   weekly: {
-    periodsPerYear: 52,
-    daysPerPeriod: 7,
+    periodsPerYear: financialCalendar.weeksInYear,
+    daysPerPeriod: financialCalendar.daysInWeek,
   },
 };
 
