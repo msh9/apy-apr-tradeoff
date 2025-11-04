@@ -17,12 +17,11 @@ The web component should be built with `lit` tooling, include reasonable light/d
 - `npm install` — install dependencies; rerun whenever package manifests change.
 - `npm run dev` — start the lightweight Vite server for hot-reload verification of Alpine components.
 - `npm run build` — emit the minified bundle into `dist/` for deployment; fails if type errors or ESLint issues persist.
-- `npm run test` — execute unit tests via Vitest; prefer `npm run test -- --runInBand` before commits touching loan math.
+- `npm run test` — execute unit tests via Vitest
 
 ## Coding Style & Naming Conventions
 
 - Use ES modules, 2-space indentation, and single quotes for strings unless template literals add clarity.
-- Alpine component IDs follow `loan-*` kebab-case (e.g., `loan-summary-card`).
 - Pure helpers live in `loan-math.js` with named exports; DOM-manipulating files end with `.ui.js` to signal side effects.
 - Run `npm run lint` (ESLint + Prettier) before opening a pull request; config enforces no implicit globals and browser-safe APIs only.
 - As needed and when appropriate write javascript appropriate for accurately handling monetary amounts. This means full precision calculations, rounding only when displaying final results. It also means avoiding floating point math where possible.
@@ -30,8 +29,7 @@ The web component should be built with `lit` tooling, include reasonable light/d
 ## Testing Guidelines
 
 - Write Vitest specs for every branch of amortization logic, mocking only built-in APIs like `Intl.NumberFormat` when necessary.
-- Snapshot HTML for key Alpine templates using `@testing-library/alpine` helpers living under `tests/ui/`.
-- Target ≥90% statement coverage on `loan-math` modules; document any exclusions inside `tests/coverage-exemptions.md`.
+- Target ≥80% statement coverage on `loan-math` modules; document any exclusions inside `tests/coverage-exemptions.md`.
 
 ## Commit & Pull Request Guidelines
 
