@@ -148,7 +148,7 @@ describe('mini-money Amount', () => {
 
       expect(lhs.precision).toBe(1);
       expect(lhs.toDecimal()).toBeCloseTo(20.8, 2);
-    })
+    });
 
     it('divides with a zero numerator', () => {
       const lhs = new Amount(0, 4);
@@ -157,8 +157,8 @@ describe('mini-money Amount', () => {
       lhs.divideBy(rhs);
 
       expect(lhs.precision).toBe(3);
-      expect(lhs.toDecimal()).toBeCloseTo(0,3);
-    })
+      expect(lhs.toDecimal()).toBeCloseTo(0, 3);
+    });
 
     it('reduces more precise divisor before dividing', () => {
       const lhs = new Amount(10.0, 2);

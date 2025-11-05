@@ -136,7 +136,7 @@ class Amount {
     const scale = 10 ** targetPrecision;
     const product = this.integerValue * otherValue;
 
-    this.integerValue = Math.round(product / scale);
+    this.integerValue = Math.trunc(product / scale);
 
     return this;
   }
@@ -167,7 +167,7 @@ class Amount {
     const scale = 10 ** targetPrecision;
     const numerator = this.integerValue * scale;
 
-    this.integerValue = Math.round(numerator / otherValue);
+    this.integerValue = Math.trunc(numerator / otherValue);
 
     return this;
   }
@@ -197,7 +197,7 @@ class Amount {
     const exponentDecimal = alignedExponent / scale;
     const resultDecimal = baseDecimal ** exponentDecimal;
 
-    this.integerValue = Math.round(resultDecimal * scale);
+    this.integerValue = Math.trunc(resultDecimal * scale);
 
     return this;
   }
