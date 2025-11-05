@@ -142,6 +142,37 @@ class Amount {
   }
 
   /**
+   * divides this amount by the other amount, an amount of greater precision will first be reduced to this amount's
+   * precision, an amount of lower precision from this amount will lower **this** amount's precision.
+   * @method divideBy
+   * @param {Amount} other The other amount to divide this amount by, updating this amount
+   * @returns {Amount}
+   */
+  divideBy(other) {
+    assertAmount(other);
+
+    const targetPrecision = Math.min(this.precision, other.precision);
+
+    if (this.precision !== targetPrecision) {
+      this.integerValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
+      this._precision = targetPrecision;
+    }
+
+    const otherValue = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
+
+    if (otherValue === 0) {
+      throw new Error('Cannot divide by zero');
+    }
+
+    const scale = 10 ** targetPrecision;
+    const numerator = this.integerValue * scale;
+
+    this.integerValue = Math.round(numerator / otherValue);
+
+    return this;
+  }
+
+  /**
    * raises (exponent) this amount by the other amount, an amount of greater precision will first be
    * reduced to this amount's precision, an amount of lower precision from this amount will lower **this** amount's
    * precision.

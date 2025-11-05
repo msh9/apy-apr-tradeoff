@@ -129,6 +129,61 @@ describe('mini-money Amount', () => {
     });
   });
 
+  describe('divideBy', () => {
+    it('divides values that already share the same precision', () => {
+      const lhs = new Amount(25.0, 2);
+      const rhs = new Amount(2.0, 2);
+
+      lhs.divideBy(rhs);
+
+      expect(lhs.precision).toBe(2);
+      expect(lhs.toDecimal()).toBeCloseTo(12.5, 10);
+    });
+
+    it('reduces more precise numerator before dividing', () => {
+      const lhs = new Amount(10.432, 3);
+      const rhs = new Amount(0.5, 1);
+
+      lhs.divideBy(rhs);
+
+      expect(lhs.precision).toBe(1);
+      expect(lhs.toDecimal()).toBeCloseTo(20.8, 2);
+    })
+
+    it('divides with a zero numerator', () => {
+      const lhs = new Amount(0, 4);
+      const rhs = new Amount(4.355, 3);
+
+      lhs.divideBy(rhs);
+
+      expect(lhs.precision).toBe(3);
+      expect(lhs.toDecimal()).toBeCloseTo(0,3);
+    })
+
+    it('reduces more precise divisor before dividing', () => {
+      const lhs = new Amount(10.0, 2);
+      const rhs = new Amount(0.5, 4);
+
+      lhs.divideBy(rhs);
+
+      expect(lhs.precision).toBe(2);
+      expect(lhs.toDecimal()).toBeCloseTo(20, 10);
+    });
+
+    it('rejects zero divisor', () => {
+      const lhs = new Amount(5, 2);
+      const rhs = new Amount(0, 2);
+
+      expect(() => lhs.divideBy(rhs)).toThrow(/zero/);
+    });
+
+    it('rejects non-Amount inputs', () => {
+      const lhs = new Amount(5, 2);
+
+      expect(() => lhs.divideBy(2)).toThrow(/Amount/);
+    });
+  });
+
   describe('raiseBy', () => {
     it('raises to a power when the exponent shares precision', () => {
       const base = new Amount(2.0, 2);
