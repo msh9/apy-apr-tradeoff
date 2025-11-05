@@ -53,9 +53,9 @@ class Account {
    */
   set balance(newBalance) {
     if (newBalance instanceof Amount) {
-        this._balance = newBalance;
+      this._balance = newBalance;
     } else {
-        this._balance = new Amount(newBalance);
+      this._balance = new Amount(newBalance);
     }
   }
 
