@@ -72,7 +72,7 @@ describe('deposit Account', () => {
     it('rejects non-Amount-compatible inputs', () => {
       const account = new Account(100);
 
-      expect(() => account.withdraw('12')).toThrow(/amount/i);
+      expect(() => account.withdraw('12')).toThrow(/must be a finite number/i);
     });
   });
 

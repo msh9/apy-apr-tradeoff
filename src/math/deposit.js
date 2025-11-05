@@ -12,22 +12,6 @@
 
 import { Amount } from './mini-money.js';
 
-const toAmount = (value, precisionHint) => {
-  if (value instanceof Amount) {
-    return value;
-  }
-
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) {
-      throw new Error('Value must be a finite number');
-    }
-
-    return precisionHint !== undefined ? new Amount(value, precisionHint) : new Amount(value);
-  }
-
-  throw new Error('Value must be a number or Amount');
-};
-
 /**
  * Provides functions for interacting with a deposit account on a periodic basis.
  * @class Account
@@ -41,8 +25,8 @@ class Account {
    * @param {number|Amount} apy The annual percentage yield for the account, defaults to zero
    */
   constructor(openingBalance = 0, apy = 0) {
-    this._balance = toAmount(openingBalance);
-    this._apy = toAmount(apy);
+    this._balance = new Amount(openingBalance);
+    this._apy = new Amount(apy);
   }
 
   /**
@@ -68,7 +52,11 @@ class Account {
    * @param {number|Amount} newBalance The new balance
    */
   set balance(newBalance) {
-    this._balance = toAmount(newBalance);
+    if (newBalance instanceof Amount) {
+        this._balance = newBalance;
+    } else {
+        this._balance = new Amount(newBalance);
+    }
   }
 
   /**
@@ -78,7 +66,7 @@ class Account {
    * @returns {Account} This account updated by the withdrawal
    */
   withdraw(withdrawal) {
-    const withdrawalAmount = toAmount(withdrawal, this._balance.precision);
+    const withdrawalAmount = new Amount(withdrawal, this._balance.precision);
 
     if (withdrawalAmount.integerValue < 0) {
       throw new Error('Withdrawal must be zero or greater');
