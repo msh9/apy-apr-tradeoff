@@ -46,6 +46,9 @@ class Amount {
     this.integerValue = Math.trunc(value * scale);
   }
 
+  /**
+   * @property {integerValue} precision
+   */
   get precision() {
     return this._precision;
   }
