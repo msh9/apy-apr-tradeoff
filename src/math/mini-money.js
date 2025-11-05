@@ -170,6 +170,15 @@ class Amount {
 
     return this;
   }
+
+  /**
+   * Converts the internal integer representation to a decimal number.
+   * @returns {number}
+   */
+  toDecimal() {
+    const scale = 10 ** this.precision;
+    return this.integerValue / scale;
+  }
 }
 
 export { Amount };

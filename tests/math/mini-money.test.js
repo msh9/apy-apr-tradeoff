@@ -2,11 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { Amount } from '../../src/math/mini-money.js';
 
-const toDecimal = (amount) => {
-  const scale = 10 ** amount.precision;
-  return amount.integerValue / scale;
-};
-
 describe('mini-money Amount', () => {
   describe('constructor', () => {
     it('scales values into integer representation based on precision', () => {
@@ -14,11 +9,32 @@ describe('mini-money Amount', () => {
 
       expect(amount.precision).toBe(2);
       expect(amount.integerValue).toBe(1843);
-      expect(toDecimal(amount)).toBeCloseTo(18.43, 10);
+      expect(amount.toDecimal()).toBeCloseTo(18.43, 10);
     });
 
     it('rejects non-integer precisions', () => {
       expect(() => new Amount(1.23, 1.5)).toThrow(/precision/i);
+    });
+  });
+
+  describe('toDecimal', () => {
+    it('returns the decimal representation based on precision', () => {
+      const amount = new Amount(123.456, 3);
+
+      expect(amount.toDecimal()).toBeCloseTo(123.456, 10);
+    });
+
+    it('handles amounts with differing precision', () => {
+      const amount = new Amount(0.000123, 6);
+
+      expect(amount.toDecimal()).toBeCloseTo(0.000123, 10);
+    });
+
+    it('reflects updated integer values after operations', () => {
+      const amount = new Amount(10, 2);
+      amount.addTo(new Amount(0.25, 2));
+
+      expect(amount.toDecimal()).toBeCloseTo(10.25, 10);
     });
   });
 
@@ -32,7 +48,7 @@ describe('mini-money Amount', () => {
       expect(result).toBe(lhs);
       expect(lhs.precision).toBe(2);
       expect(lhs.integerValue).toBe(1300);
-      expect(toDecimal(lhs)).toBeCloseTo(13.0, 10);
+      expect(lhs.toDecimal()).toBeCloseTo(13.0, 10);
     });
 
     it('reduces more precise values before adding', () => {
@@ -43,7 +59,7 @@ describe('mini-money Amount', () => {
 
       expect(lhs.precision).toBe(2);
       expect(lhs.integerValue).toBe(1027);
-      expect(toDecimal(lhs)).toBeCloseTo(10.27, 10);
+      expect(lhs.toDecimal()).toBeCloseTo(10.27, 10);
     });
 
     it('lowers this amount precision when adding less precise values', () => {
@@ -54,7 +70,7 @@ describe('mini-money Amount', () => {
 
       expect(lhs.precision).toBe(2);
       expect(lhs.integerValue).toBe(2023);
-      expect(toDecimal(lhs)).toBeCloseTo(20.23, 10);
+      expect(lhs.toDecimal()).toBeCloseTo(20.23, 10);
     });
 
     it('rejects non-Amount inputs', () => {
@@ -73,7 +89,7 @@ describe('mini-money Amount', () => {
 
       expect(lhs.precision).toBe(2);
       expect(lhs.integerValue).toBe(1975);
-      expect(toDecimal(lhs)).toBeCloseTo(19.75, 10);
+      expect(lhs.toDecimal()).toBeCloseTo(19.75, 10);
     });
 
     it('lowers precision when subtracting a less precise amount', () => {
@@ -84,7 +100,7 @@ describe('mini-money Amount', () => {
 
       expect(lhs.precision).toBe(2);
       expect(lhs.integerValue).toBe(411);
-      expect(toDecimal(lhs)).toBeCloseTo(4.11, 10);
+      expect(lhs.toDecimal()).toBeCloseTo(4.11, 10);
     });
 
     it('rejects non-Amount inputs', () => {
@@ -103,7 +119,7 @@ describe('mini-money Amount', () => {
 
       expect(lhs.precision).toBe(2);
       expect(lhs.integerValue).toBe(2468);
-      expect(toDecimal(lhs)).toBeCloseTo(24.68, 10);
+      expect(lhs.toDecimal()).toBeCloseTo(24.68, 10);
     });
 
     it('rejects non-Amount inputs', () => {
@@ -122,7 +138,7 @@ describe('mini-money Amount', () => {
 
       expect(base.precision).toBe(2);
       expect(base.integerValue).toBe(800);
-      expect(toDecimal(base)).toBeCloseTo(8, 10);
+      expect(base.toDecimal()).toBeCloseTo(8, 10);
     });
 
     it('rejects non-Amount inputs', () => {
