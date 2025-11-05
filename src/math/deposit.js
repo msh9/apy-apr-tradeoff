@@ -10,6 +10,7 @@
  * @module deposit
  */
 
+import { financialCalendar } from './constants.js';
 import { Amount } from './mini-money.js';
 
 /**
@@ -27,6 +28,7 @@ class Account {
   constructor(openingBalance = 0, apy = 0) {
     this._balance = new Amount(openingBalance);
     this._apy = new Amount(apy);
+    this._apyPlusOne = new Amount(1, this._apy.precision).addTo(this._apy);
   }
 
   /**
@@ -99,13 +101,10 @@ class Account {
       return this;
     }
 
-    const balanceDecimal = this._balance.toDecimal();
-    const apyDecimal = this._apy.toDecimal();
-
-    const dailyFactor = (1 + apyDecimal) ** (1 / 365);
-    const accruedBalance = balanceDecimal * dailyFactor ** days;
-
-    this._balance = new Amount(accruedBalance, this._balance.precision);
+    const ourPrecision = this.balance.precision;
+    const daysInYear = new Amount(financialCalendar.daysInYear, ourPrecision);
+    const accrualFactor = this._apyPlusOne.raiseBy(new Amount(days, ourPrecision).divideBy(daysInYear));
+    this.balance = this.balance.multiplyBy(accrualFactor);
 
     return this;
   }
