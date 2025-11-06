@@ -23,10 +23,8 @@ describe('deposit Account', () => {
       const account = new Account(openingBalance, apy);
 
       expect(account.balance).toBeInstanceOf(Amount);
-      expect(account.balance.precision).toBe(10);
       expect(account.balance.toDecimal()).toBeCloseTo(openingBalance, 10);
       expect(account.apy).toBeInstanceOf(Amount);
-      expect(account.apy.precision).toBe(10);
       expect(account.apy.toDecimal()).toBeCloseTo(apy, 10);
     });
   });
@@ -38,19 +36,17 @@ describe('deposit Account', () => {
       account.balance = 150.25;
 
       expect(account.balance).toBeInstanceOf(Amount);
-      expect(account.balance.precision).toBe(10);
       expect(account.balance.toDecimal()).toBeCloseTo(150.25, 10);
     });
 
     it('preserves Amount instances without altering precision', () => {
-      const customAmount = new Amount(42.195, 4);
+      const customAmount = new Amount(42.195);
       const account = new Account();
 
       account.balance = customAmount;
 
       expect(account.balance).toBe(customAmount);
-      expect(account.balance.precision).toBe(4);
-      expect(account.balance.toDecimal()).toBeCloseTo(42.195, 4);
+      expect(account.balance.toDecimal()).toBeCloseTo(42.195, 6);
     });
   });
 

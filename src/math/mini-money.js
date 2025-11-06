@@ -3,7 +3,9 @@
  * mathematics for monetary values.
  * @module mini-money
  */
-import { defaults } from './constants';
+
+const FIXED_PRECISION = 20;
+const SCALE = 10 ** FIXED_PRECISION;
 
 function assertAmount(candidate) {
   if (!(candidate instanceof Amount)) {
@@ -11,25 +13,9 @@ function assertAmount(candidate) {
   }
 }
 
-function scaleIntegerValue(integerValue, currentPrecision, targetPrecision) {
-  if (currentPrecision === targetPrecision) {
-    return integerValue;
-  }
-
-  const precisionDiff = targetPrecision - currentPrecision;
-
-  if (precisionDiff > 0) {
-    return integerValue * 10 ** precisionDiff;
-  }
-
-  const divisor = 10 ** Math.abs(precisionDiff);
-  return Math.trunc(integerValue / divisor);
-}
-
-function createAmount(integerValue, precision) {
-  const amount = new Amount(0, precision);
+function createAmount(integerValue) {
+  const amount = Object.create(Amount.prototype);
   amount.integerValue = integerValue;
-
   return amount;
 }
 
@@ -40,147 +26,79 @@ function createAmount(integerValue, precision) {
 class Amount {
   /**
    * @param {number} value The monetary value to represent
-   * @param {integerValue} precision How many places after the decimal to retain and matain calculation accuracy
    */
-  constructor(value, precision = defaults.ioPrecision) {
+  constructor(value) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
       throw new Error('Value must be a finite number');
     }
 
-    this.precision = precision;
-
-    const scale = 10 ** this.precision;
-    this.integerValue = Math.trunc(value * scale);
-  }
-
-  /**
-   * @property {integerValue} precision
-   */
-  get precision() {
-    return this._precision;
-  }
-
-  set precision(precision) {
-    if (!Number.isInteger(precision)) {
-      throw new Error('Precision must be an integer number');
-    }
-
-    if (precision < 0) {
-      throw new Error('Precision must be zero or greater');
-    }
-
-    if (this._precision !== undefined) {
-      throw new Error('Precision may not be changed');
-    }
-
-    this._precision = precision;
+    this.integerValue = Math.trunc(value * SCALE);
   }
 
   /**
    * adds an amount to this amount, adding an amount of greater precision with first reduce that amounts
    * precision, adding an amount of lower precision to this amount will lower the resulting amount's precision.
    * @method addTo
-   * @param {Amount} other The other amount to add to this amount, returning a new Amount
+   * @param {Amount} augend The other amount to add to this amount, returning a new Amount
    * @returns {Amount}
    */
-  addTo(other) {
-    assertAmount(other);
+  addTo(augend) {
+    assertAmount(augend);
 
-    const targetPrecision = Math.min(this.precision, other.precision);
-    const thisValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
-    const otherValue = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
-    const resultValue = thisValue + otherValue;
+    const resultValue = this.integerValue + augend.integerValue;
 
-    return createAmount(resultValue, targetPrecision);
+    return createAmount(resultValue);
   }
 
   /**
    * removes an amount from this amount, removing an amount of greater precision will first reduce that amounts
    * precision, removing an amount of lower precision from this amount will lower the resulting amount's precision.
    * @method subtractFrom
-   * @param {Amount} other The other amount to subtract from this amount, returning a new Amount
+   * @param {Amount} subtrahend The other amount to subtract from this amount, returning a new Amount
    * @returns {Amount}
    */
-  subtractFrom(other) {
-    assertAmount(other);
+  subtractFrom(subtrahend) {
+    assertAmount(subtrahend);
 
-    const targetPrecision = Math.min(this.precision, other.precision);
-    const thisValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
-    const otherValue = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
-    const resultValue = thisValue - otherValue;
+    const resultValue = this.integerValue - subtrahend.integerValue;
 
-    return createAmount(resultValue, targetPrecision);
+    return createAmount(resultValue);
   }
 
   /**
    * multiplies this amount by the other amount, an amount of greater precision will first be reduced to this amount's
    * precision, an amount of lower precision from this amount will lower the resulting amount's precision.
    * @method multiplyBy
-   * @param {Amount} other The other amount to multiply by this amount, returning a new Amount
+   * @param {Amount} multiplicand The other amount to multiply by this amount, returning a new Amount
    * @returns {Amount}
    */
-  multiplyBy(other) {
-    assertAmount(other);
+  multiplyBy(multiplicand) {
+    assertAmount(multiplicand);
 
-    const targetPrecision = Math.min(this.precision, other.precision);
-    const thisValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
-    const otherValue = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
+    const product = this.integerValue * multiplicand.integerValue;
+    const resultValue = Math.trunc(product / SCALE);
 
-    const scale = 10 ** targetPrecision;
-    const product = thisValue * otherValue;
-    const resultValue = Math.trunc(product / scale);
-
-    return createAmount(resultValue, targetPrecision);
+    return createAmount(resultValue);
   }
 
   /**
    * divides this amount by the other amount, an amount of greater precision will first be reduced to this amount's
    * precision, an amount of lower precision from this amount will lower the resulting amount's precision.
    * @method divideBy
-    * @param {Amount} other The other amount to divide this amount by, returning a new Amount
+   * @param {Amount} divisor The other amount to divide this amount by, returning a new Amount
    * @returns {Amount}
    */
-  divideBy(other) {
-    assertAmount(other);
+  divideBy(divisor) {
+    assertAmount(divisor);
 
-    const targetPrecision = Math.min(this.precision, other.precision);
-    const thisValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
-    const otherValue = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
-
-    if (otherValue === 0) {
+    if (divisor.integerValue === 0) {
       throw new Error('Cannot divide by zero');
     }
 
-    const scale = 10 ** targetPrecision;
-    const numerator = thisValue * scale;
-    const resultValue = Math.trunc(numerator / otherValue);
+    const numerator = this.integerValue * SCALE;
+    const resultValue = Math.trunc(numerator / divisor.integerValue);
 
-    return createAmount(resultValue, targetPrecision);
-  }
-
-  /**
-   * raises (exponent) this amount by the other amount, an amount of greater precision will first be
-   * reduced to this amount's precision, an amount of lower precision from this amount will lower the resulting amount's
-   * precision.
-   * @method raiseBy
-   * @param {Amount} other The other amount to raise this amount, returning a new Amount
-   * @returns {Amount}
-   */
-  raiseBy(other) {
-    assertAmount(other);
-
-    const targetPrecision = Math.min(this.precision, other.precision);
-    const thisValue = scaleIntegerValue(this.integerValue, this.precision, targetPrecision);
-    const alignedExponent = scaleIntegerValue(other.integerValue, other.precision, targetPrecision);
-
-    const scale = 10 ** targetPrecision;
-    const baseDecimal = thisValue / scale;
-    const exponentDecimal = alignedExponent / scale;
-    const resultDecimal = baseDecimal ** exponentDecimal;
-
-    const resultValue = Math.trunc(resultDecimal * scale);
-
-    return createAmount(resultValue, targetPrecision);
+    return createAmount(resultValue);
   }
 
   /**
@@ -188,9 +106,8 @@ class Amount {
    * @returns {number}
    */
   toDecimal() {
-    const scale = 10 ** this.precision;
-    return this.integerValue / scale;
+    return this.integerValue / SCALE;
   }
 }
 
-export { Amount };
+export { Amount, FIXED_PRECISION };

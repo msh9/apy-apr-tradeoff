@@ -21,14 +21,20 @@ class Account {
   /**
    * "Opens" an account with a opening balance and the percentage yield to be used for subsequent calculations.
    *  Values may be specified as numbers of as Amounts. Values provided as JS numbers will be converted to Amounts
-   *  with a 10-digit precision.
+   *  using the global Amount.precision.
    * @param {number|Amount} openingBalance The opening account balance, defaults to zero
    * @param {number|Amount} apy The annual percentage yield for the account, defaults to zero
    */
   constructor(openingBalance = 0, apy = 0) {
     this._balance = new Amount(openingBalance);
     this._apy = new Amount(apy);
-    this._dailyRate = this._apy.divideBy(new Amount(365));
+    // We do the following calculation once and acknowledge here that it is likely only accurate to ~15 places
+    // because we're using JS' number representation to perform it. See MDN for more information,
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number#number_encoding
+    // Ultimately, we have to determine the 365th root somehow in order to go from a APY to a daily rate (
+    // assuming daily componding.)
+
+    this._dailyRate = new Amount(Math.pow(1 + apy, 1 / financialCalendar.daysInYear) - 1);
   }
 
   /**
@@ -49,26 +55,22 @@ class Account {
 
   /**
    * Sets the deposit account's current balance. Values provided as a number will be converted to an
-   * Amount with a 10-digit precision.
+   * Amount using the global Amount.precision.
    * @property balance
    * @param {number|Amount} newBalance The new balance
    */
   set balance(newBalance) {
-    if (newBalance instanceof Amount) {
-      this._balance = newBalance;
-    } else {
-      this._balance = new Amount(newBalance);
-    }
+    this._balance = newBalance instanceof Amount ? newBalance : new Amount(newBalance);
   }
 
   /**
    * Withdraw a specified amount of funds from the account. Withdrawal amounts specified as a JS number
-   * will be converted to Amounts with a 10-digit precision.
+   * will be converted to Amounts using the global Amount.precision.
    * @param {number|Amount} withdrawal The amount to withdraw from the account
    * @returns {Account} This account updated by the withdrawal
    */
   withdraw(withdrawal) {
-    const withdrawalAmount = new Amount(withdrawal, this._balance.precision);
+    const withdrawalAmount = new Amount(withdrawal);
 
     if (withdrawalAmount.integerValue < 0) {
       throw new Error('Withdrawal must be zero or greater');
@@ -101,13 +103,9 @@ class Account {
       return this;
     }
 
-    const daysInYear = financialCalendar.daysInYear;
-    const currentBalanceDecimal = this._balance.toDecimal();
-    const apyDecimal = this._apy.toDecimal();
-    const growthFactor = (1 + apyDecimal) ** (days / daysInYear);
-    const updatedBalance = currentBalanceDecimal * growthFactor;
-
-    this._balance = new Amount(updatedBalance, this._balance.precision);
+    for (let i = 0; i < days; i++) {
+      this._balance = this._balance.addTo(this._balance.multiplyBy(this._dailyRate));
+    }
 
     return this;
   }
