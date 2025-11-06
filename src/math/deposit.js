@@ -28,7 +28,7 @@ class Account {
   constructor(openingBalance = 0, apy = 0) {
     this._balance = new Amount(openingBalance);
     this._apy = new Amount(apy);
-    this._apyPlusOne = new Amount(1, this._apy.precision).addTo(this._apy);
+    this._dailyRate = this._apy.divideBy(new Amount(365));
   }
 
   /**
@@ -78,7 +78,7 @@ class Account {
       throw new Error('Insufficient funds for withdrawal');
     }
 
-    this._balance.subtractFrom(withdrawalAmount);
+    this._balance = this._balance.subtractFrom(withdrawalAmount);
 
     return this;
   }
@@ -101,10 +101,13 @@ class Account {
       return this;
     }
 
-    const ourPrecision = this.balance.precision;
-    const daysInYear = new Amount(financialCalendar.daysInYear, ourPrecision);
-    const accrualFactor = this._apyPlusOne.raiseBy(new Amount(days, ourPrecision).divideBy(daysInYear));
-    this.balance = this.balance.multiplyBy(accrualFactor);
+    const daysInYear = financialCalendar.daysInYear;
+    const currentBalanceDecimal = this._balance.toDecimal();
+    const apyDecimal = this._apy.toDecimal();
+    const growthFactor = (1 + apyDecimal) ** (days / daysInYear);
+    const updatedBalance = currentBalanceDecimal * growthFactor;
+
+    this._balance = new Amount(updatedBalance, this._balance.precision);
 
     return this;
   }
