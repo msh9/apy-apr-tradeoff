@@ -21,7 +21,7 @@ class Account {
    * 'user' of the loan makes payments on the due date exactly as perscribed by the payment schedule. 
    * @param {number} periodCount The number of periods in this loan
    * @param {string} periodType The type of period, either 'MONTH' or 'WEEK', to be used
-   * @param {number|Amount} rate The simple, non-compound, interest charge associated with this loan
+   * @param {number|Amount} rate The simple, non-compound, nominal annual interest charge associated with this loan
    * @param {number|Amount} principal The amount of money being loaned
    */
   constructor(periodCount, periodType, rate, principal) {}
