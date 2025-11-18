@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Account } from '../../src/math/loan.js';
-import { Amount, FIXED_PRECISION } from '../../src/math/mini-money.js';
-
-const SCALE = 10 ** FIXED_PRECISION;
+import { Amount } from '../../src/math/mini-money.js';
 
 describe('loan Account', () => {
   describe('constructor', () => {
@@ -21,7 +19,7 @@ describe('loan Account', () => {
   describe('totalInterest', () => {
     it('returns the simple interest amount for the entire loan for non-interest bearing loans', () => {
       const principal = 2000;
-      const rate = 0
+      const rate = 0;
       const account = new Account(12, 'MONTH', rate, principal);
 
       const interest = account.totalInterest();
@@ -32,7 +30,7 @@ describe('loan Account', () => {
 
     it('returns the simple interest amount for the entire loan for interest bearing loans', () => {
       const principal = 2000;
-      const rate = 0.05
+      const rate = 0.05;
       const account = new Account(12, 'MONTH', rate, principal);
       const interest = account.totalInterest();
 
@@ -58,11 +56,11 @@ describe('loan Account', () => {
 
     /**
      * NB: the following tests specify an approach to payment calculation that always rounds in
-     * debtor's favor (ie the lender is giving away fractions of a penny) 
+     * debtor's favor (ie the lender is giving away fractions of a penny)
      */
     it('creates payments with zero interest and principal that does not divide evenly (rounding down #1)', () => {
       const periods = 3;
-      const principal = 602.50;
+      const principal = 602.5;
       const rate = 0;
 
       const account = new Account(periods, 'MONTH', rate, principal);
@@ -93,11 +91,11 @@ describe('loan Account', () => {
       const schedule = account.paymentSchedule();
 
       expect(schedule).toHaveLength(periodCount);
-      schedule.forEach(payment => expect(payment).toBeInstanceOf(Amount));
+      schedule.forEach((payment) => expect(payment).toBeInstanceOf(Amount));
 
       expect(account.totalInterest().toDecimal()).toBeCloseTo(120, 2);
-      schedule.forEach(payment => {
-        expect(payment.toDecimal()).toBeCloseTo(105.50, 2);
+      schedule.forEach((payment) => {
+        expect(payment.toDecimal()).toBeCloseTo(105.5, 2);
       });
     });
 
@@ -112,8 +110,8 @@ describe('loan Account', () => {
       expect(schedule).toHaveLength(periodCount);
 
       expect(account.totalInterest().toDecimal()).toBeCloseTo(10, 2);
-      expect(paymentSchedule).toHaveLength(1);
-      expect(paymentSchedule[0].toDecimal()).toBeCloseTo(1210, 2);
+      expect(schedule).toHaveLength(1);
+      expect(schedule[0].toDecimal()).toBeCloseTo(1210, 2);
     });
   });
 });

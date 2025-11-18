@@ -3,7 +3,7 @@
  * @module loan
  */
 
-import { Amount } from "./mini-money";
+import { Amount } from './mini-money';
 
 /**
  * Loan account represents fixed term simple interest installment loans, complete with functions to introspect
@@ -15,10 +15,10 @@ import { Amount } from "./mini-money";
  */
 class Account {
   /**
-   * Creates a immutable loan account. This class does not attempt to emulate a real banking system and therefore does 
+   * Creates a immutable loan account. This class does not attempt to emulate a real banking system and therefore does
    * not
-   * support payments over time. Instead it calculates a fixed payment schedule and total interest assuming that the 
-   * 'user' of the loan makes payments on the due date exactly as perscribed by the payment schedule. 
+   * support payments over time. Instead it calculates a fixed payment schedule and total interest assuming that the
+   * 'user' of the loan makes payments on the due date exactly as perscribed by the payment schedule.
    * @param {number} periodCount The number of periods in this loan
    * @param {string} periodType The type of period, either 'MONTH' or 'WEEK', to be used
    * @param {number|Amount} rate The simple, non-compound, nominal annual interest charge associated with this loan
@@ -43,4 +43,4 @@ class Account {
   totalInterest() {}
 }
 
-export { Account }
+export { Account };
