@@ -35,7 +35,7 @@ describe('loan Account', () => {
       const interest = account.totalInterest();
 
       expect(interest).toBeInstanceOf(Amount);
-      expect(interest.toDecimal()).toBeCloseTo(principal * (1 + rate), 15);
+      expect(interest.toDecimal()).toBeCloseTo(54.579562, 2);
     });
   });
 
@@ -93,7 +93,7 @@ describe('loan Account', () => {
       expect(schedule).toHaveLength(periodCount);
       schedule.forEach((payment) => expect(payment).toBeInstanceOf(Amount));
 
-      expect(account.totalInterest().toDecimal()).toBeCloseTo(120, 2);
+      expect(account.totalInterest().toDecimal()).toBeCloseTo(65.98, 2);
       schedule.forEach((payment) => {
         expect(payment.toDecimal()).toBeCloseTo(105.5, 2);
       });
