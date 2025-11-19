@@ -6,10 +6,7 @@
 import { financialCalendar } from './constants.js';
 import { Amount } from './mini-money.js';
 
-const PERIODS_PER_YEAR = {
-  MONTH: financialCalendar.monthsInYear,
-  WEEK: financialCalendar.weeksInYear,
-};
+const MONTHS_PER_YEAR = financialCalendar.monthsInYear;
 
 function roundDownToCents(value) {
   return Math.floor(value * 100) / 100;
@@ -30,7 +27,7 @@ class Account {
    * support payments over time. Instead it calculates a fixed payment schedule and total interest assuming that the
    * 'user' of the loan makes payments on the due date exactly as perscribed by the payment schedule.
    * @param {number} periodCount The number of periods in this loan
-   * @param {string} periodType The type of period, either 'MONTH' or 'WEEK', to be used
+   * @param {string} periodType The type of period, only 'MONTH' is supported
    * @param {number|Amount} rate The simple, non-compound, nominal annual interest charge associated with this loan
    * @param {number|Amount} principal The amount of money being loaned
    */
@@ -40,9 +37,8 @@ class Account {
     }
 
     const normalizedPeriodType = typeof periodType === 'string' ? periodType.toUpperCase() : '';
-    const periodsPerYear = PERIODS_PER_YEAR[normalizedPeriodType];
 
-    if (!periodsPerYear) {
+    if (normalizedPeriodType !== 'MONTH') {
       throw new Error('Unsupported period type');
     }
 
@@ -60,8 +56,8 @@ class Account {
     this.periodType = normalizedPeriodType;
     this.apr = apr;
     this.principal = principalAmount;
-    this._periodsPerYear = periodsPerYear;
-    this._periodicRate = periodsPerYear ? apr / periodsPerYear : 0;
+    this._periodsPerYear = MONTHS_PER_YEAR;
+    this._periodicRate = apr / MONTHS_PER_YEAR;
     this._cachedPaymentDecimal = undefined;
   }
 

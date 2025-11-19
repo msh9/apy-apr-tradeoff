@@ -13,8 +13,8 @@ describe('loan Account', () => {
       expect(() => new Account(periodCount, 'MONTH', 0.05, 500)).toThrow(/period/i);
     });
 
-    it('rejects unsupported period types', () => {
-      expect(() => new Account(6, 'YEAR', 0.05, 500)).toThrow(/period/i);
+    it.each(['YEAR', 'WEEK'])('rejects unsupported period types (%s)', (periodType) => {
+      expect(() => new Account(6, periodType, 0.05, 500)).toThrow(/period/i);
     });
   });
 
