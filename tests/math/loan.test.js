@@ -99,6 +99,41 @@ describe('loan Account', () => {
       });
     });
 
+    it('creates multiple equal payments with interest and part year schedule', () => {
+      const periodCount = 6;
+      const principal = 1150;
+      const rate = 0.05;
+      const account = new Account(periodCount, 'MONTH', rate, principal);
+
+      const schedule = account.paymentSchedule();
+
+      expect(schedule).toHaveLength(periodCount);
+      schedule.forEach((payment) => expect(payment).toBeInstanceOf(Amount));
+
+      expect(account.totalInterest().toDecimal()).toBeCloseTo(16.82, 2);
+      schedule.forEach((payment) => {
+        expect(payment.toDecimal()).toBeCloseTo(194.47, 2);
+      });
+    });
+
+    it('creates multiple equal payments with interest and a greater than one year schedule', () => {
+      const periodCount = 18;
+      const principal = 1029.19;
+      const rate = 0.20;
+      const account = new Account(periodCount, 'MONTH', rate, principal);
+
+      const schedule = account.paymentSchedule();
+
+      expect(schedule).toHaveLength(periodCount);
+      schedule.forEach((payment) => expect(payment).toBeInstanceOf(Amount));
+
+      expect(account.totalInterest().toDecimal()).toBeCloseTo(66.65, 2);
+      schedule.forEach((payment) => {
+        expect(payment.toDecimal()).toBeCloseTo(170.57, 2);
+      });
+
+    });
+
     it('can create a single advance, single period, single payment schedule', () => {
       const periodCount = 1;
       const principal = 1200;
