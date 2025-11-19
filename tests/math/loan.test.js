@@ -5,10 +5,12 @@ import { Amount } from '../../src/math/mini-money.js';
 
 describe('loan Account', () => {
   describe('constructor', () => {
-    it('requires a positive integer period count', () => {
-      expect(() => new Account(0, 'MONTH', 0.05, 500)).toThrow(/period/i);
-      expect(() => new Account(12.5, 'MONTH', 0.05, 500)).toThrow(/period/i);
-      expect(() => new Account(-3, 'MONTH', 0.05, 500)).toThrow(/period/i);
+    it.each([
+      { label: 'zero periods', periodCount: 0 },
+      { label: 'non-integer periods', periodCount: 12.5 },
+      { label: 'negative periods', periodCount: -3 }
+    ])('requires a positive integer period count (%s)', ({ periodCount }) => {
+      expect(() => new Account(periodCount, 'MONTH', 0.05, 500)).toThrow(/period/i);
     });
 
     it('rejects unsupported period types', () => {
@@ -17,75 +19,91 @@ describe('loan Account', () => {
   });
 
   describe('totalInterest', () => {
-    it('returns the simple interest amount for the entire loan for non-interest bearing loans', () => {
+    it.each([
+      { label: 'non-interest bearing loan', rate: 0, expected: 0 },
+      { label: 'interest bearing loan', rate: 0.05, expected: 54.579562 }
+    ])('returns the simple interest amount for the entire loan (%s)', ({ rate, expected }) => {
       const principal = 2000;
-      const rate = 0;
       const account = new Account(12, 'MONTH', rate, principal);
 
       const interest = account.totalInterest();
 
       expect(interest).toBeInstanceOf(Amount);
-      expect(interest.toDecimal()).toBe(0);
-    });
-
-    it('returns the simple interest amount for the entire loan for interest bearing loans', () => {
-      const principal = 2000;
-      const rate = 0.05;
-      const account = new Account(12, 'MONTH', rate, principal);
-      const interest = account.totalInterest();
-
-      expect(interest).toBeInstanceOf(Amount);
-      expect(interest.toDecimal()).toBeCloseTo(54.579562, 2);
+      expect(interest.toDecimal()).toBeCloseTo(expected, 2);
     });
   });
 
   describe('paymentSchedule', () => {
-    it('creates equal zero interest payments with principal that divides evenly', () => {
-      const periods = 6;
-      const principal = 1200;
-      const rate = 0;
-
-      const account = new Account(periods, 'MONTH', rate, principal);
-      expect(account.totalInterest().toDecimal()).toBe(0);
-      const paymentSchedule = account.paymentSchedule();
-      expect(paymentSchedule).toHaveLength(6);
-      for (let i = 0; i < periods; i++) {
-        expect(paymentSchedule[i].toDecimal()).toBeCloseTo(principal / periods, 2);
-      }
-    });
-
     /**
      * NB: the following tests specify an approach to payment calculation that always rounds in
      * debtor's favor (ie the lender is giving away fractions of a penny)
      */
-    it('creates payments with zero interest and principal that does not divide evenly (rounding down #1)', () => {
-      const periods = 3;
-      const principal = 602.5;
-      const rate = 0;
+    it.each([
+      {
+        label: 'principal divides evenly',
+        periods: 6,
+        principal: 1200,
+        expectedPayment: 200
+      },
+      {
+        label: 'rounding down scenario #1',
+        periods: 3,
+        principal: 602.5,
+        expectedPayment: 200.83
+      },
+      {
+        label: 'rounding down scenario #2',
+        periods: 3,
+        principal: 602.57,
+        expectedPayment: 200.85
+      }
+    ])(
+      'creates zero interest payments (%s)',
+      ({ periods, principal, expectedPayment }) => {
+        const rate = 0;
+        const account = new Account(periods, 'MONTH', rate, principal);
+        const paymentSchedule = account.paymentSchedule();
 
-      const account = new Account(periods, 'MONTH', rate, principal);
-      const paymentSchedule = account.paymentSchedule();
-      paymentSchedule.forEach((payment) => {
-        expect(payment.toDecimal()).toBeCloseTo(200.83, 2);
-      });
-    });
+        expect(account.totalInterest().toDecimal()).toBeCloseTo(0, 2);
+        expect(paymentSchedule).toHaveLength(periods);
+        paymentSchedule.forEach((payment) => {
+          expect(payment.toDecimal()).toBeCloseTo(expectedPayment, 2);
+        });
+      }
+    );
 
-    it('creates payments with zero interest and principal that does not divide evenly (rounding down #2)', () => {
-      const periods = 3;
-      const principal = 602.57;
-      const rate = 0;
-
-      const account = new Account(periods, 'MONTH', rate, principal);
-      const paymentSchedule = account.paymentSchedule();
-      paymentSchedule.forEach((payment) => {
-        expect(payment.toDecimal()).toBeCloseTo(200.85, 2);
-      });
-    });
-
-    it('creates multiple equal payments with interest', () => {
-      const periodCount = 12;
-      const principal = 1200;
-      const rate = 0.1;
+    it.each([
+      {
+        label: 'monthly 1 year',
+        periodCount: 12,
+        principal: 1200,
+        rate: 0.1,
+        totalInterest: 65.98,
+        expectedPayment: 105.5
+      },
+      {
+        label: 'monthly 6 months',
+        periodCount: 6,
+        principal: 1150,
+        rate: 0.05,
+        totalInterest: 16.82,
+        expectedPayment: 194.47
+      },
+      {
+        label: 'monthly 18 months',
+        periodCount: 18,
+        principal: 1029.19,
+        rate: 0.2,
+        totalInterest: 170.57,
+        expectedPayment: 66.65
+      }
+    ])('creates multiple equal payments with interest (%s)', ({
+      periodCount,
+      principal,
+      rate,
+      totalInterest,
+      expectedPayment
+    }) => {
       const account = new Account(periodCount, 'MONTH', rate, principal);
 
       const schedule = account.paymentSchedule();
@@ -93,45 +111,10 @@ describe('loan Account', () => {
       expect(schedule).toHaveLength(periodCount);
       schedule.forEach((payment) => expect(payment).toBeInstanceOf(Amount));
 
-      expect(account.totalInterest().toDecimal()).toBeCloseTo(65.98, 2);
+      expect(account.totalInterest().toDecimal()).toBeCloseTo(totalInterest, 2);
       schedule.forEach((payment) => {
-        expect(payment.toDecimal()).toBeCloseTo(105.5, 2);
+        expect(payment.toDecimal()).toBeCloseTo(expectedPayment, 2);
       });
-    });
-
-    it('creates multiple equal payments with interest and part year schedule', () => {
-      const periodCount = 6;
-      const principal = 1150;
-      const rate = 0.05;
-      const account = new Account(periodCount, 'MONTH', rate, principal);
-
-      const schedule = account.paymentSchedule();
-
-      expect(schedule).toHaveLength(periodCount);
-      schedule.forEach((payment) => expect(payment).toBeInstanceOf(Amount));
-
-      expect(account.totalInterest().toDecimal()).toBeCloseTo(16.82, 2);
-      schedule.forEach((payment) => {
-        expect(payment.toDecimal()).toBeCloseTo(194.47, 2);
-      });
-    });
-
-    it('creates multiple equal payments with interest and a greater than one year schedule', () => {
-      const periodCount = 18;
-      const principal = 1029.19;
-      const rate = 0.20;
-      const account = new Account(periodCount, 'MONTH', rate, principal);
-
-      const schedule = account.paymentSchedule();
-
-      expect(schedule).toHaveLength(periodCount);
-      schedule.forEach((payment) => expect(payment).toBeInstanceOf(Amount));
-
-      expect(account.totalInterest().toDecimal()).toBeCloseTo(170.57, 2);
-      schedule.forEach((payment) => {
-        expect(payment.toDecimal()).toBeCloseTo(66.65, 2);
-      });
-
     });
 
     it('can create a single advance, single period, single payment schedule', () => {
