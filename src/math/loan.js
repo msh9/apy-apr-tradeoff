@@ -58,11 +58,10 @@ class Account {
       throw new Error('Unsupported period type');
     }
 
-    const aprAmount = rate instanceof Amount ? rate : new Amount(rate);
-    const aprDecimal = aprAmount.toDecimal();
-    if (typeof aprDecimal !== 'number' || Number.isNaN(aprDecimal) || !Number.isFinite(aprDecimal) || aprDecimal < 0) {
+    if (typeof rate !== 'number' || Number.isNaN(rate) || !Number.isFinite(rate) || rate < 0) {
       throw new Error('Rate must be a non-negative finite number');
     }
+    this.nominalAnnualRate = rate instanceof Amount ? rate : new Amount(rate);
 
     const principalAmount = principal instanceof Amount ? principal : new Amount(principal);
     if (principalAmount.integerValue < 0) {
@@ -71,23 +70,19 @@ class Account {
 
     this.periodCount = periodCount;
     this.periodType = normalizedPeriodType;
-    this.apr = aprAmount;
     this.principal = principalAmount;
     this._periodsPerYear = MONTHS_PER_YEAR;
-    this._periodicRate = aprAmount.divideBy(MONTHS_PER_YEAR_AMOUNT);
+    this._periodicRate = this.nominalAnnualRate.divideBy(MONTHS_PER_YEAR_AMOUNT);
     this._cachedPaymentAmount = undefined;
   }
 
   /**
-   * Returns the computed payment schedule for the loan using equal sized payments across all payment periods. In
-   * certain cases where the loan amount does not divide equally the final payment may be larger.
-   * @method paymentSchedule
-   * @returns {Array[Amount]} Returns an array of Amount objects, one for each period.
+   * Returns the computed payment amount for each period of the loan.
+   * @method payment
+   * @returns {Amount} payment amount per period
    */
-  paymentSchedule() {
-    const payment = this._getPaymentAmount();
-
-    return Array.from({ length: this.periodCount }, () => new Amount(payment.toDecimal()));
+  payment() {
+    return this._getPaymentAmount();
   }
 
   /**
@@ -135,7 +130,7 @@ class Account {
 
     if (this._periodicRate.integerValue === 0) {
       // Zero interest loans round down to the nearest cent for every payment, favoring the borrower.
-      const basePayment = this.principal.toDecimal() / this.periodCount;
+      const basePayment = this.principal.divideBy(new Amount(this.periodCount));
       return roundDownToCents(basePayment);
     }
 
