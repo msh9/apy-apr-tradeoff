@@ -184,4 +184,35 @@ describe('mini-money Amount', () => {
       expect(() => lhs.divideBy(2)).toThrow(/Amount/);
     });
   });
+
+  describe('pow', () => {
+    it('raises amount to a positive integer exponent', () => {
+      const base = new Amount(1.5);
+
+      const result = base.pow(3);
+
+      expect(result.toDecimal()).toBeCloseTo(3.375, 10);
+      expect(base.toDecimal()).toBeCloseTo(1.5, 10);
+    });
+
+    it('returns 1 for exponent zero', () => {
+      const base = new Amount(12.34);
+
+      const result = base.pow(0);
+
+      expect(result.toDecimal()).toBeCloseTo(1, 10);
+    });
+
+    it('rejects negative exponents', () => {
+      const base = new Amount(2);
+
+      expect(() => base.pow(-1)).toThrow(/non-negative integer/i);
+    });
+
+    it('rejects non-integer exponents', () => {
+      const base = new Amount(2);
+
+      expect(() => base.pow(1.5)).toThrow(/non-negative integer/i);
+    });
+  });
 });
