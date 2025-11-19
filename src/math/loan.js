@@ -7,9 +7,25 @@ import { financialCalendar } from './constants.js';
 import { Amount } from './mini-money.js';
 
 const MONTHS_PER_YEAR = financialCalendar.monthsInYear;
+const MONTHS_PER_YEAR_AMOUNT = new Amount(MONTHS_PER_YEAR);
 
 function roundDownToCents(value) {
-  return Math.floor(value * 100) / 100;
+  const decimalValue = value instanceof Amount ? value.toDecimal() : value;
+  const floored = Math.floor(decimalValue * 100) / 100;
+  return new Amount(floored);
+}
+
+function multiplyAmountByCount(amount, count) {
+  if (!Number.isInteger(count) || count < 0) {
+    throw new Error('Count must be a non-negative integer');
+  }
+
+  let total = new Amount(0);
+  for (let i = 0; i < count; i += 1) {
+    total = total.addTo(amount);
+  }
+
+  return total;
 }
 
 /**
@@ -42,8 +58,9 @@ class Account {
       throw new Error('Unsupported period type');
     }
 
-    const apr = rate instanceof Amount ? rate.toDecimal() : rate;
-    if (typeof apr !== 'number' || Number.isNaN(apr) || !Number.isFinite(apr) || apr < 0) {
+    const aprAmount = rate instanceof Amount ? rate : new Amount(rate);
+    const aprDecimal = aprAmount.toDecimal();
+    if (typeof aprDecimal !== 'number' || Number.isNaN(aprDecimal) || !Number.isFinite(aprDecimal) || aprDecimal < 0) {
       throw new Error('Rate must be a non-negative finite number');
     }
 
@@ -54,11 +71,11 @@ class Account {
 
     this.periodCount = periodCount;
     this.periodType = normalizedPeriodType;
-    this.apr = apr;
+    this.apr = aprAmount;
     this.principal = principalAmount;
     this._periodsPerYear = MONTHS_PER_YEAR;
-    this._periodicRate = apr / MONTHS_PER_YEAR;
-    this._cachedPaymentDecimal = undefined;
+    this._periodicRate = aprAmount.divideBy(MONTHS_PER_YEAR_AMOUNT);
+    this._cachedPaymentAmount = undefined;
   }
 
   /**
@@ -68,9 +85,9 @@ class Account {
    * @returns {Array[Amount]} Returns an array of Amount objects, one for each period.
    */
   paymentSchedule() {
-    const payment = this._getPaymentDecimal();
+    const payment = this._getPaymentAmount();
 
-    return Array.from({ length: this.periodCount }, () => new Amount(payment));
+    return Array.from({ length: this.periodCount }, () => new Amount(payment.toDecimal()));
   }
 
   /**
@@ -80,47 +97,54 @@ class Account {
    * @returns {Amount} Returns an amount representing the interest charge
    */
   totalInterest() {
-    if (this._periodicRate === 0) {
+    if (this._periodicRate.integerValue === 0) {
       return new Amount(0);
     }
 
-    const payment = this._getPaymentDecimal();
-    const totalPaid = payment * this.periodCount;
-    const rawInterest = Math.max(0, totalPaid - this.principal.toDecimal());
-    const flooredInterest = roundDownToCents(rawInterest);
-    const fractionalPenny = rawInterest - flooredInterest;
+    const payment = this._getPaymentAmount();
+    const totalPaidAmount = multiplyAmountByCount(payment, this.periodCount);
+    const rawInterestAmount = totalPaidAmount.subtractFrom(this.principal);
+
+    if (rawInterestAmount.integerValue <= 0) {
+      return new Amount(0);
+    }
+
+    const flooredInterest = roundDownToCents(rawInterestAmount);
+    const fractionalPenny = rawInterestAmount.toDecimal() - flooredInterest.toDecimal();
 
     // Preserve "borrower-friendly" rounding unless nearly a full penny would be lost.
-    const finalInterest = fractionalPenny >= 0.0095 ? rawInterest : flooredInterest;
-
-    return new Amount(finalInterest);
-  }
-
-  _getPaymentDecimal() {
-    if (this._cachedPaymentDecimal === undefined) {
-      this._cachedPaymentDecimal = this._calculatePaymentDecimal();
+    if (fractionalPenny >= 0.0095) {
+      return rawInterestAmount;
     }
 
-    return this._cachedPaymentDecimal;
+    return flooredInterest;
   }
 
-  _calculatePaymentDecimal() {
-    const principalValue = this.principal.toDecimal();
-
-    if (principalValue === 0) {
-      return 0;
+  _getPaymentAmount() {
+    if (this._cachedPaymentAmount === undefined) {
+      this._cachedPaymentAmount = this._calculatePaymentAmount();
     }
 
-    if (this._periodicRate === 0) {
+    return this._cachedPaymentAmount;
+  }
+
+  _calculatePaymentAmount() {
+    if (this.principal.integerValue === 0) {
+      return new Amount(0);
+    }
+
+    if (this._periodicRate.integerValue === 0) {
       // Zero interest loans round down to the nearest cent for every payment, favoring the borrower.
-      const basePayment = principalValue / this.periodCount;
+      const basePayment = this.principal.toDecimal() / this.periodCount;
       return roundDownToCents(basePayment);
     }
 
-    const numerator = principalValue * this._periodicRate;
-    const denominator = 1 - Math.pow(1 + this._periodicRate, -this.periodCount);
+    const ratePlusOne = this._periodicRate.addTo(new Amount(1));
+    const growthFactor = ratePlusOne.pow(this.periodCount);
+    const numerator = this.principal.multiplyBy(this._periodicRate).multiplyBy(growthFactor);
+    const denominator = growthFactor.subtractFrom(new Amount(1));
 
-    return numerator / denominator;
+    return numerator.divideBy(denominator);
   }
 }
 
