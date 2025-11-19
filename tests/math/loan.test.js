@@ -127,9 +127,9 @@ describe('loan Account', () => {
       expect(schedule).toHaveLength(periodCount);
       schedule.forEach((payment) => expect(payment).toBeInstanceOf(Amount));
 
-      expect(account.totalInterest().toDecimal()).toBeCloseTo(66.65, 2);
+      expect(account.totalInterest().toDecimal()).toBeCloseTo(170.57, 2);
       schedule.forEach((payment) => {
-        expect(payment.toDecimal()).toBeCloseTo(170.57, 2);
+        expect(payment.toDecimal()).toBeCloseTo(66.65, 2);
       });
 
     });
