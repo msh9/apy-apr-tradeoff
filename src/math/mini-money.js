@@ -108,6 +108,28 @@ class Amount {
   toDecimal() {
     return this.integerValue / SCALE;
   }
+
+  /**
+   * Raises this amount to a non-negative integer power using repeated multiplication.
+   * @param {number} exponent The exponent to apply, must be a whole number >= 0
+   * @returns {Amount}
+   */
+  pow(exponent) {
+    if (!Number.isInteger(exponent) || exponent < 0) {
+      throw new Error('Exponent must be a non-negative integer');
+    }
+
+    if (exponent === 0) {
+      return new Amount(1);
+    }
+
+    let result = new Amount(1);
+    for (let i = 0; i < exponent; i += 1) {
+      result = result.multiplyBy(this);
+    }
+
+    return result;
+  }
 }
 
 export { Amount, FIXED_PRECISION };
