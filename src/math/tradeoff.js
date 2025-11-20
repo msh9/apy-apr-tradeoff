@@ -32,7 +32,7 @@ class TradeoffComparison {
    * @returns {import('./mini-money.js').Amount}
    */
   estimateSavingsWithDeposits(options) {
-    const { depositAccount } = this.#simulateScenario(options);
+    const { depositAccount } = this.simulateScenario(options);
     return depositAccount.balance;
   }
 
@@ -46,20 +46,21 @@ class TradeoffComparison {
    * @returns {import('./mini-money.js').Amount}
    */
   estimateNetLoanCost(options) {
-    const { loanAccount, depositAccount } = this.#simulateScenario(options);
+    const { loanAccount, depositAccount } = this.simulateScenario(options);
     const loanInterest = loanAccount.totalInterest();
     const depositSavings = depositAccount.balance;
 
     return loanInterest.subtractFrom(depositSavings);
   }
 
-  #simulateScenario({ principal, periodCount, loanRate = 0, depositApy }) {
+  simulateScenario({ principal, periodCount, loanRate = 0, depositApy }) {
     const loanAccount = new LoanAccount(periodCount, 'MONTH', loanRate, principal);
     const depositAccount = new DepositAccount(principal, depositApy);
     const paymentAmount = loanAccount.payment();
     const periods = periodCount;
     const monthlyRateDecimal =
-      (loanRate instanceof Amount ? loanRate.toDecimal() : loanRate || 0) / financialCalendar.monthsInYear;
+      (loanRate instanceof Amount ? loanRate.toDecimal() : loanRate || 0) /
+      financialCalendar.monthsInYear;
     const periodicRate = new Amount(monthlyRateDecimal);
     const zero = new Amount(0);
     let outstandingPrincipal = loanAccount.principal;
@@ -79,7 +80,10 @@ class TradeoffComparison {
       let principalPortion = paymentAmount.subtractFrom(interestPortion);
 
       const isFinalPeriod = i === periods - 1;
-      if (principalPortion.integerValue <= 0 || principalPortion.integerValue > outstandingPrincipal.integerValue) {
+      if (
+        principalPortion.integerValue <= 0 ||
+        principalPortion.integerValue > outstandingPrincipal.integerValue
+      ) {
         principalPortion = outstandingPrincipal;
       } else if (isFinalPeriod) {
         principalPortion = outstandingPrincipal;
