@@ -51,6 +51,13 @@ describe('deposit Account', () => {
   });
 
   describe('withdraw', () => {
+    it('reduces the balance by an "Amount"', () => {
+      const account = new Account(500);
+
+      account.withdraw(new Amount(125.5));
+
+      expect(account.balance.toDecimal()).toBeCloseTo(374.5, 10);
+    });
     it('reduces the balance by the specified amount', () => {
       const account = new Account(500);
 

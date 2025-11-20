@@ -70,7 +70,12 @@ class Account {
    * @returns {Account} This account updated by the withdrawal
    */
   withdraw(withdrawal) {
-    const withdrawalAmount = new Amount(withdrawal);
+    let withdrawalAmount;
+    if (withdrawal instanceof Amount) {
+      withdrawalAmount = withdrawal;
+    } else {
+      withdrawalAmount = new Amount(withdrawal);
+    }
 
     if (withdrawalAmount.integerValue < 0) {
       throw new Error('Withdrawal must be zero or greater');

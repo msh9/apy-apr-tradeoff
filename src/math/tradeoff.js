@@ -3,7 +3,6 @@
  * @module tradeoff
  */
 
-import { financialCalendar } from './constants.js';
 import { Account as DepositAccount } from './deposit.js';
 import { Account as LoanAccount } from './loan.js';
 import { Amount } from './mini-money.js';
@@ -16,7 +15,7 @@ class TradeoffComparison {
   /**
    * Creates a comparison helper.
    * @param {object} [options]
-   * @param {number} [options.periodDays=30] Number of days to simulate between loan payments
+   * @param {number} [options.periodDays=31] Number of days to simulate between loan payments
    */
   constructor({ periodDays = 31 } = {}) {
     this.periodDays = periodDays;
@@ -43,7 +42,7 @@ class TradeoffComparison {
    * @param {number} options.periodCount Loan period count
    * @param {number} options.loanRate Nominal annual loan rate as a decimal
    * @param {number} options.depositApy Deposit account APY as a decimal
-   * @returns {import(Amount}
+   * @returns {Amount}
    */
   estimateNetLoanCost(options) {
     const { depositAccount } = this.simulateScenario(options);
@@ -55,41 +54,10 @@ class TradeoffComparison {
   simulateScenario({ principal, periodCount, loanRate = 0, depositApy }) {
     const loanAccount = new LoanAccount(periodCount, 'MONTH', loanRate, principal);
     const depositAccount = new DepositAccount(principal, depositApy);
-    const paymentAmount = loanAccount.payment();
-    const periods = periodCount;
-    const monthlyRateDecimal =
-      (loanRate instanceof Amount ? loanRate.toDecimal() : loanRate || 0) /
-      financialCalendar.monthsInYear;
-    const periodicRate = new Amount(monthlyRateDecimal);
-    const zero = new Amount(0);
-    let outstandingPrincipal = loanAccount.principal;
 
-    for (let i = 0; i < periods; i += 1) {
-      if (outstandingPrincipal.integerValue === 0) {
-        break;
-      }
-
+    for (let i = 0; i < periodCount; i++) {
       depositAccount.accrueForDays(this.periodDays);
-
-      let interestPortion = zero;
-      if (periodicRate.integerValue !== 0) {
-        interestPortion = outstandingPrincipal.multiplyBy(periodicRate);
-      }
-
-      let principalPortion = paymentAmount.subtractFrom(interestPortion);
-
-      const isFinalPeriod = i === periods - 1;
-      if (
-        principalPortion.integerValue <= 0 ||
-        principalPortion.integerValue > outstandingPrincipal.integerValue
-      ) {
-        principalPortion = outstandingPrincipal;
-      } else if (isFinalPeriod) {
-        principalPortion = outstandingPrincipal;
-      }
-
-      depositAccount.withdraw(paymentAmount.toDecimal());
-      outstandingPrincipal = outstandingPrincipal.subtractFrom(principalPortion);
+      depositAccount.withdraw(loanAccount.payment());
     }
 
     return { loanAccount, depositAccount };
