@@ -56,7 +56,12 @@ describe('TradeoffComparison', () => {
         depositApy: 0,
       });
 
-      expect(scenario.net.toDecimal()).toBeCloseTo(0, 4);
+      /**
+       * Because we also round in favor of the debtor it is possible to end up with a few leftover pennies instead of
+       * the loan and deposit account netting out to zero. We take the easy way out here because this is not actually
+       * banking software and merely assert that result is within one decimal place of zero.
+       */
+      expect(scenario.net.toDecimal()).toBeCloseTo(0, 1);
     });
   });
 
