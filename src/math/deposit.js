@@ -76,10 +76,6 @@ class Account {
       throw new Error('Withdrawal must be zero or greater');
     }
 
-    if (withdrawalAmount.integerValue > this._balance.integerValue) {
-      throw new Error('Insufficient funds for withdrawal');
-    }
-
     this._balance = this._balance.subtractFrom(withdrawalAmount);
 
     return this;

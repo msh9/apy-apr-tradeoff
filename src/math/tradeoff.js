@@ -18,7 +18,7 @@ class TradeoffComparison {
    * @param {object} [options]
    * @param {number} [options.periodDays=30] Number of days to simulate between loan payments
    */
-  constructor({ periodDays = 30 } = {}) {
+  constructor({ periodDays = 31 } = {}) {
     this.periodDays = periodDays;
   }
 
@@ -29,7 +29,7 @@ class TradeoffComparison {
    * @param {number} options.periodCount Loan period count
    * @param {number} [options.loanRate=0] Nominal annual loan rate, defaults to zero for promo loans
    * @param {number} options.depositApy Deposit account APY as a decimal
-   * @returns {import('./mini-money.js').Amount}
+   * @returns {Amount}
    */
   estimateSavingsWithDeposits(options) {
     const { depositAccount } = this.simulateScenario(options);
@@ -43,14 +43,13 @@ class TradeoffComparison {
    * @param {number} options.periodCount Loan period count
    * @param {number} options.loanRate Nominal annual loan rate as a decimal
    * @param {number} options.depositApy Deposit account APY as a decimal
-   * @returns {import('./mini-money.js').Amount}
+   * @returns {import(Amount}
    */
   estimateNetLoanCost(options) {
-    const { loanAccount, depositAccount } = this.simulateScenario(options);
-    const loanInterest = loanAccount.totalInterest();
-    const depositSavings = depositAccount.balance;
+    const { depositAccount } = this.simulateScenario(options);
+    const netCost = depositAccount.balance.multiplyBy(new Amount(-1));
 
-    return loanInterest.subtractFrom(depositSavings);
+    return netCost;
   }
 
   simulateScenario({ principal, periodCount, loanRate = 0, depositApy }) {
@@ -89,7 +88,7 @@ class TradeoffComparison {
         principalPortion = outstandingPrincipal;
       }
 
-      depositAccount.withdraw(principalPortion.toDecimal());
+      depositAccount.withdraw(paymentAmount.toDecimal());
       outstandingPrincipal = outstandingPrincipal.subtractFrom(principalPortion);
     }
 
