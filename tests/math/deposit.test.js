@@ -51,6 +51,13 @@ describe('deposit Account', () => {
   });
 
   describe('withdraw', () => {
+    it('reduces the balance by an "Amount"', () => {
+      const account = new Account(500);
+
+      account.withdraw(new Amount(125.5));
+
+      expect(account.balance.toDecimal()).toBeCloseTo(374.5, 10);
+    });
     it('reduces the balance by the specified amount', () => {
       const account = new Account(500);
 
@@ -59,16 +66,18 @@ describe('deposit Account', () => {
       expect(account.balance.toDecimal()).toBeCloseTo(374.5, 10);
     });
 
-    it('rejects withdrawals that exceed the current balance', () => {
-      const account = new Account(200);
-
-      expect(() => account.withdraw(250)).toThrow();
-    });
-
     it('rejects non-Amount-compatible inputs', () => {
       const account = new Account(100);
 
       expect(() => account.withdraw('12')).toThrow(/must be a finite number/i);
+    });
+
+    it('allows overdrafts so long as the withdrawal is finite and non-negative', () => {
+      const account = new Account(50);
+
+      account.withdraw(75);
+
+      expect(account.balance.toDecimal()).toBeCloseTo(-25, 10);
     });
   });
 

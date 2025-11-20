@@ -15,19 +15,6 @@ function roundDownToCents(value) {
   return new Amount(floored);
 }
 
-function multiplyAmountByCount(amount, count) {
-  if (!Number.isInteger(count) || count < 0) {
-    throw new Error('Count must be a non-negative integer');
-  }
-
-  let total = new Amount(0);
-  for (let i = 0; i < count; i += 1) {
-    total = total.addTo(amount);
-  }
-
-  return total;
-}
-
 /**
  * Loan account represents fixed term simple interest installment loans, complete with functions to introspect
  * the results of the loan over time. This class makes key assumptions to simplify this utility calculator,
@@ -97,7 +84,7 @@ class Account {
     }
 
     const payment = this._getPaymentAmount();
-    const totalPaidAmount = multiplyAmountByCount(payment, this.periodCount);
+    const totalPaidAmount = payment.multiplyBy(new Amount(this.periodCount));
     const rawInterestAmount = totalPaidAmount.subtractFrom(this.principal);
 
     if (rawInterestAmount.integerValue <= 0) {
