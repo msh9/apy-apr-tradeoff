@@ -20,6 +20,19 @@ class TradeoffComparison {
     this.periodDays = periodDays;
   }
 
+  /**
+   * 
+   * @param {object} scenario Settings for the comparison
+   * @param {number} scenario.principal The purcahse amount that will also be used for loan principal
+   * @param {number} scenario.periodCount The number of periods (usually months) to evaluate the loan and deposit
+   *  account
+   * @param {number} [scenario.loanRate=0] The nominal annual rate for the loan, defaulting to zero, as a decimal
+   * @param {number} [scenario.depositApy] The apy used for deposit account interest accrual
+   * @param {number} [scenario.ccRewardsRate] The decimal percentage rate for calculating comparative credit card
+   *  rewards
+   * @param {number} [scenario.ccRate] The decimal percentage APR for the credit card
+   * @returns {object} The net comparison between loan cost and deposit accruals and the underlying account models
+   */
   simulateScenario({ principal, periodCount, loanRate = 0, depositApy }) {
     const loanAccount = new LoanAccount(periodCount, 'MONTH', loanRate, principal);
     const depositAccount = new DepositAccount(principal, depositApy);
