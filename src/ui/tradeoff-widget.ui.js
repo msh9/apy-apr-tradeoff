@@ -25,15 +25,32 @@ class TradeoffWidget extends LitElement {
     this.termMonthsInput = '';
     this.errorMessage = '';
     this.resultText = 'dollars gained or lost';
-    this.currency = 'USD';
+    this._currency = 'USD';
     this.periodDays = undefined;
     this._calculator = new TradeoffComparison();
+    this._lastNetValue = undefined;
   }
 
   updated(changed) {
     if (changed.has('periodDays')) {
       const days = Number.isFinite(this.periodDays) ? this.periodDays : undefined;
       this._calculator = new TradeoffComparison({ periodDays: days });
+      this._calculateIfReady();
+    }
+  }
+
+  get currency() {
+    return this._currency;
+  }
+
+  set currency(value) {
+    const normalized = value || 'USD';
+    const previous = this._currency;
+    this._currency = normalized;
+    this.requestUpdate('currency', previous);
+
+    if (Number.isFinite(this._lastNetValue)) {
+      this._updateResult(this._lastNetValue);
     }
   }
 
@@ -41,18 +58,19 @@ class TradeoffWidget extends LitElement {
     return html`
       <section class="card">
         <div class="header">
-          <div class="pill">APR vs APY Widget</div>
+          <div class="pill">Loan vs APY Widget</div>
         </div>
         <form @submit=${this._onSubmit} novalidate>
           <div class="field">
-            <label for="loanRate"><span>Rate</span></label>
+            <label for="loanRate"><span>Nominal Annual Loan Rate</span></label>
             <input
               id="loanRate"
               name="loanRate"
               type="number"
               step="0.01"
               inputmode="decimal"
-              placeholder="Loan Rate (defaults to 0%)"
+              min="0"
+              placeholder="Annual Loan Rate (defaults to 0%)"
               .value=${this.loanRateInput}
               @input=${this._onInput}
             />
@@ -66,6 +84,7 @@ class TradeoffWidget extends LitElement {
               type="number"
               step="0.01"
               inputmode="decimal"
+              min="0"
               placeholder="Deposit account APY"
               .value=${this.apyInput}
               @input=${this._onInput}
@@ -81,6 +100,7 @@ class TradeoffWidget extends LitElement {
               type="number"
               step="0.01"
               inputmode="decimal"
+              min="0"
               placeholder="Purchase amount"
               .value=${this.principalInput}
               @input=${this._onInput}
@@ -96,6 +116,7 @@ class TradeoffWidget extends LitElement {
               type="number"
               step="1"
               inputmode="numeric"
+              min="1"
               placeholder="Number of months to pay"
               .value=${this.termMonthsInput}
               @input=${this._onInput}
@@ -128,12 +149,16 @@ class TradeoffWidget extends LitElement {
     const { name, value } = event.target;
     this[`${name}Input`] = value;
     this.errorMessage = '';
+    if (value === '') {
+      this._clearResult();
+    }
     this._calculateIfReady();
   }
 
   _calculateIfReady() {
     const principal = this._parseMoney(this.principalInput);
     if (principal === null) {
+      this._clearResult();
       return;
     }
     if (principal < 0) {
@@ -143,6 +168,7 @@ class TradeoffWidget extends LitElement {
 
     const termMonths = this._parseInteger(this.termMonthsInput);
     if (termMonths === null) {
+      this._clearResult();
       return;
     }
     if (termMonths <= 0) {
@@ -152,6 +178,7 @@ class TradeoffWidget extends LitElement {
 
     const apyPercent = this._parseMoney(this.apyInput);
     if (apyPercent === null) {
+      this._clearResult();
       return;
     }
     if (apyPercent < 0) {
@@ -176,7 +203,8 @@ class TradeoffWidget extends LitElement {
     });
 
     const netValue = scenario?.net?.toDecimal ? scenario.net.toDecimal() : Number.NaN;
-    this._updateResult(netValue);
+    this._lastNetValue = Number.isFinite(netValue) ? netValue : undefined;
+    this._updateResult(this._lastNetValue);
     this._emitChange({ principal, termMonths, loanRate, depositApy, netValue });
   }
 
@@ -197,19 +225,30 @@ class TradeoffWidget extends LitElement {
     }
 
     const isCost = netValue < 0;
-    const formatted = currencyFormatter(Math.abs(netValue), this.currency);
+    const formatted = this._formatCurrency(Math.abs(netValue));
     this.resultText = `${isCost ? 'Cost' : 'Benefit'}: ${formatted}`;
   }
 
   _setError(message) {
     this.errorMessage = message;
+    this._clearResult();
+  }
+
+  _clearResult() {
+    this._lastNetValue = undefined;
+    this.resultText = 'dollars gained or lost';
   }
 
   _parseMoney(value) {
     if (value === '' || value === undefined || value === null) {
       return null;
     }
-    const parsed = Number.parseFloat(value);
+    const normalized = String(value).trim();
+    if (!/^-?\d+(\.\d+)?$/.test(normalized)) {
+      this._setError('Enter a numeric value.');
+      return null;
+    }
+    const parsed = Number.parseFloat(normalized);
     if (!Number.isFinite(parsed)) {
       this._setError('Enter a numeric value.');
       return null;
@@ -221,12 +260,25 @@ class TradeoffWidget extends LitElement {
     if (value === '' || value === undefined || value === null) {
       return null;
     }
-    const parsed = Number.parseInt(value, 10);
+    const normalized = String(value).trim();
+    if (!/^-?\d+$/.test(normalized)) {
+      this._setError('Enter a numeric value.');
+      return null;
+    }
+    const parsed = Number.parseInt(normalized, 10);
     if (Number.isNaN(parsed)) {
       this._setError('Enter a numeric value.');
       return null;
     }
     return parsed;
+  }
+
+  _formatCurrency(amount) {
+    try {
+      return currencyFormatter(amount, this.currency);
+    } catch {
+      return currencyFormatter(amount, 'USD');
+    }
   }
 
   static styles = css`
