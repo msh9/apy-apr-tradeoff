@@ -9,6 +9,9 @@ export default [
   {
     ignores: ['dist/**', 'node_modules/**'],
   },
+  js.configs.recommended,
+  eslintPluginImport.flatConfigs.recommended,
+  prettierConfig,
   {
     files: ['**/*.js', '**/*.mjs'],
     languageOptions: {
@@ -19,12 +22,6 @@ export default [
         ...globals.es2023,
       },
     },
-  },
-  js.configs.recommended,
-  eslintPluginImport.flatConfigs.recommended,
-  prettierConfig,
-  {
-    files: ['**/*.js', '**/*.mjs'],
     plugins: {
       lit: eslintPluginLit,
       prettier: eslintPluginPrettier,
