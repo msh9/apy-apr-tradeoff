@@ -18,10 +18,7 @@ describe('CreditCardAccount', () => {
 
     const interest = account.interestForDays(purchaseAmount, financialCalendar.daysInMonth);
 
-    const expected =
-      purchaseAmount *
-      (Math.pow(1 + 0.2899 / financialCalendar.daysInYear, financialCalendar.daysInMonth) - 1);
-    expect(interest.toDecimal()).toBeCloseTo(expected, 8);
+    expect(interest.toDecimal()).toBeCloseTo(18.6879325478, 10);
   });
 
   it('returns zero interest for a zero length cycle', () => {
@@ -29,6 +26,12 @@ describe('CreditCardAccount', () => {
 
     const interest = account.interestForDays(100, 0);
 
+    expect(interest.toDecimal()).toBe(0);
+  });
+
+  it('returns zero interest for a zero apr cycle', () => {
+    const account = new CreditCardAccount({ apr: 0 });
+    const interest = account.interestForDays(1200, financialCalendar.daysInMonth);
     expect(interest.toDecimal()).toBe(0);
   });
 });

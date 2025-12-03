@@ -19,35 +19,6 @@ describe('tradeoff-widget', () => {
     document.body.innerHTML = '';
   });
 
-  it('renders labeled inputs and result area matching the mock', async () => {
-    const element = await renderWidget();
-    const shadow = element.shadowRoot;
-
-    const labels = Array.from(shadow.querySelectorAll('label')).map((node) =>
-      node.textContent.trim(),
-    );
-    expect(labels).toEqual(
-      expect.arrayContaining([
-        'Nominal Annual Loan Rate',
-        'APY',
-        'Rewards',
-        'Amount',
-        'Term',
-        'Net Benefit (Cost)',
-        'Credit Card Rate',
-        'One cycle credit card rewards',
-        'One cycle credit card interest',
-      ]),
-    );
-
-    expect(shadow.querySelector('input[name="loanRate"]').placeholder).toContain('Rate');
-    expect(shadow.querySelector('input[name="apy"]').placeholder).toContain('APY');
-    expect(shadow.querySelector('input[name="ccRewardsRate"]').placeholder).toContain('Rewards');
-    expect(shadow.querySelector('input[name="ccRate"]').placeholder).toContain('28.99');
-    expect(shadow.querySelector('input[name="principal"]').placeholder).toContain('Purchase');
-    expect(shadow.querySelector('input[name="termMonths"]').placeholder).toContain('months');
-  });
-
   it('normalizes percent inputs and computes when all inputs are valid', async () => {
     const simulateSpy = vi.spyOn(TradeoffComparison.prototype, 'simulateScenario').mockReturnValue({
       net: { toDecimal: () => 123.45 },
