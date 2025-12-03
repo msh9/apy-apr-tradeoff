@@ -3,6 +3,8 @@
  * @module tradeoff
  */
 
+import { financialCalendar } from './constants.js';
+import { Account as CreditCardAccount } from './credit-card.js';
 import { Account as DepositAccount } from './deposit.js';
 import { Account as LoanAccount } from './loan.js';
 
@@ -21,7 +23,7 @@ class TradeoffComparison {
   }
 
   /**
-   * 
+   *
    * @param {object} scenario Settings for the comparison
    * @param {number} scenario.principal The purcahse amount that will also be used for loan principal
    * @param {number} scenario.periodCount The number of periods (usually months) to evaluate the loan and deposit
@@ -33,10 +35,23 @@ class TradeoffComparison {
    * @param {number} [scenario.ccRate] The decimal percentage APR for the credit card
    * @returns {object} The net comparison between loan cost and deposit accruals and the underlying account models
    */
-  simulateScenario({ principal, periodCount, loanRate = 0, depositApy }) {
+  simulateScenario({
+    principal,
+    periodCount,
+    loanRate = 0,
+    depositApy,
+    ccRewardsRate = 0,
+    ccRate = 0,
+  }) {
     const loanAccount = new LoanAccount(periodCount, 'MONTH', loanRate, principal);
     const depositAccount = new DepositAccount(principal, depositApy);
+    const creditCardAccount = new CreditCardAccount({ apr: ccRate, rewardsRate: ccRewardsRate });
     const paymentValue = loanAccount.payment().toDecimal();
+    const creditCardRewards = creditCardAccount.calculateRewards(principal);
+    const periodDays = Number.isInteger(this.periodDays)
+      ? this.periodDays
+      : financialCalendar.daysInMonth;
+    const creditCardInterest = creditCardAccount.interestForDays(principal, periodDays);
 
     for (let i = 0; i < periodCount; i++) {
       depositAccount.accrueForDays(this.periodDays);
@@ -45,7 +60,14 @@ class TradeoffComparison {
 
     const net = depositAccount.balance;
 
-    return { loanAccount, depositAccount, net };
+    return {
+      loanAccount,
+      depositAccount,
+      creditCardAccount,
+      creditCardRewards,
+      creditCardInterest,
+      net,
+    };
   }
 }
 
