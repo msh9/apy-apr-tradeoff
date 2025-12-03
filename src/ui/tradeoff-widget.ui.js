@@ -76,68 +76,7 @@ class TradeoffWidget extends LitElement {
         </div>
         <form @submit=${this._onSubmit} novalidate>
           <div class="field">
-            <label for="loanRate"><span>Nominal Annual Loan Rate</span></label>
-            <input
-              id="loanRate"
-              name="loanRate"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="Annual Loan Rate (defaults to 0%)"
-              .value=${this.loanRateInput}
-              @input=${this._onInput}
-            />
-          </div>
-
-          <div class="field">
-            <label for="ccRate"><span>Credit Card Rate</span></label>
-            <input
-              id="ccRate"
-              name="ccRate"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="CC Rate (defaults to 28.99%)"
-              .value=${this.ccRateInput}
-              @input=${this._onInput}
-            />
-          </div>
-
-          <div class="field">
-            <label for="apy"><span>APY</span></label>
-            <input
-              id="apy"
-              name="apy"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="Deposit account APY"
-              .value=${this.apyInput}
-              @input=${this._onInput}
-              required
-            />
-          </div>
-
-          <div class="field">
-            <label for="ccRewardsRate"><span>Rewards</span></label>
-            <input
-              id="ccRewardsRate"
-              name="ccRewardsRate"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="Credit Card Rewards Rate"
-              .value=${this.ccRewardsRateInput}
-              @input=${this._onInput}
-            />
-          </div>
-
-          <div class="field">
-            <label for="principal"><span>Amount</span></label>
+            <label for="principal">Purchase amount</label>
             <input
               id="principal"
               name="principal"
@@ -153,7 +92,7 @@ class TradeoffWidget extends LitElement {
           </div>
 
           <div class="field">
-            <label for="termMonths"><span>Term</span></label>
+            <label for="termMonths">Loan term in months</label>
             <input
               id="termMonths"
               name="termMonths"
@@ -167,6 +106,67 @@ class TradeoffWidget extends LitElement {
               required
             />
           </div>
+
+          <div class="field">
+            <label for="loanRate">Nominal annual loan rate</label>
+            <input
+              id="loanRate"
+              name="loanRate"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="Annual Loan Rate (defaults to 0%)"
+              .value=${this.loanRateInput}
+              @input=${this._onInput}
+            />
+          </div>
+
+          <div class="field">
+            <label for="apy">Deposit APY</label>
+            <input
+              id="apy"
+              name="apy"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="Deposit account APY"
+              .value=${this.apyInput}
+              @input=${this._onInput}
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="ccRate">Credit Card APR</label>
+            <input
+              id="ccRate"
+              name="ccRate"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="CC Rate (defaults to 28.99%)"
+              .value=${this.ccRateInput}
+              @input=${this._onInput}
+            />
+          </div>
+
+          <div class="field">
+            <label for="ccRewardsRate">Credit Card Rewards Rate</label>
+            <input
+              id="ccRewardsRate"
+              name="ccRewardsRate"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="Credit Card Rewards Rate"
+              .value=${this.ccRewardsRateInput}
+              @input=${this._onInput}
+            />
+          </div>
         </form>
 
         <div class="divider" aria-hidden="true">
@@ -177,19 +177,19 @@ class TradeoffWidget extends LitElement {
 
         <div class="results-grid">
           <div class="field result-block">
-            <label for="result"><span>Net Benefit (Cost)</span></label>
+            <label for="result">Net benefit (or Cost) of BNPL + savings account</label>
             <output id="result" data-role="result" aria-live="polite">${this.resultText}</output>
           </div>
 
           <div class="field result-block">
-            <label for="ccRewardsResult"><span>One cycle credit card rewards</span></label>
+            <label for="ccRewardsResult">One cycle credit card rewards on purchase</label>
             <output id="ccRewardsResult" data-role="cc-rewards" aria-live="polite">
               ${this.ccRewardsText}
             </output>
           </div>
 
           <div class="field result-block">
-            <label for="ccInterestResult"><span>One cycle credit card interest</span></label>
+            <label for="ccInterestResult">One cycle credit card interest on purchase</label>
             <output id="ccInterestResult" data-role="cc-interest" aria-live="polite">
               ${this.ccInterestText}
             </output>
