@@ -4,15 +4,20 @@ import { TradeoffComparison } from '../math/tradeoff.js';
 
 const currencyFormatter = (value, currency = 'USD') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
+const DEFAULT_CC_RATE_PERCENT = 28.99;
 
 class TradeoffWidget extends LitElement {
   static properties = {
     loanRateInput: { state: true },
     apyInput: { state: true },
+    ccRewardsRateInput: { state: true },
+    ccRateInput: { state: true },
     principalInput: { state: true },
     termMonthsInput: { state: true },
     errorMessage: { state: true },
     resultText: { state: true },
+    ccRewardsText: { state: true },
+    ccInterestText: { state: true },
     currency: { type: String },
     periodDays: { type: Number, attribute: 'period-days' },
   };
@@ -21,14 +26,20 @@ class TradeoffWidget extends LitElement {
     super();
     this.loanRateInput = '';
     this.apyInput = '';
+    this.ccRewardsRateInput = '';
+    this.ccRateInput = '';
     this.principalInput = '';
     this.termMonthsInput = '';
     this.errorMessage = '';
     this.resultText = 'dollars gained or lost';
+    this.ccRewardsText = 'dollars';
+    this.ccInterestText = 'dollars';
     this._currency = 'USD';
     this.periodDays = undefined;
     this._calculator = new TradeoffComparison();
     this._lastNetValue = undefined;
+    this._lastCcRewardsValue = undefined;
+    this._lastCcInterestValue = undefined;
   }
 
   updated(changed) {
@@ -52,6 +63,9 @@ class TradeoffWidget extends LitElement {
     if (Number.isFinite(this._lastNetValue)) {
       this._updateResult(this._lastNetValue);
     }
+    if (Number.isFinite(this._lastCcRewardsValue) || Number.isFinite(this._lastCcInterestValue)) {
+      this._updateCreditCardResults(this._lastCcRewardsValue, this._lastCcInterestValue);
+    }
   }
 
   render() {
@@ -62,38 +76,7 @@ class TradeoffWidget extends LitElement {
         </div>
         <form @submit=${this._onSubmit} novalidate>
           <div class="field">
-            <label for="loanRate"><span>Nominal Annual Loan Rate</span></label>
-            <input
-              id="loanRate"
-              name="loanRate"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="Annual Loan Rate (defaults to 0%)"
-              .value=${this.loanRateInput}
-              @input=${this._onInput}
-            />
-          </div>
-
-          <div class="field">
-            <label for="apy"><span>APY</span></label>
-            <input
-              id="apy"
-              name="apy"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="Deposit account APY"
-              .value=${this.apyInput}
-              @input=${this._onInput}
-              required
-            />
-          </div>
-
-          <div class="field">
-            <label for="principal"><span>Amount</span></label>
+            <label for="principal">Purchase amount</label>
             <input
               id="principal"
               name="principal"
@@ -109,7 +92,7 @@ class TradeoffWidget extends LitElement {
           </div>
 
           <div class="field">
-            <label for="termMonths"><span>Term</span></label>
+            <label for="termMonths">Loan term in months</label>
             <input
               id="termMonths"
               name="termMonths"
@@ -123,6 +106,67 @@ class TradeoffWidget extends LitElement {
               required
             />
           </div>
+
+          <div class="field">
+            <label for="loanRate">Nominal annual loan rate</label>
+            <input
+              id="loanRate"
+              name="loanRate"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="Annual Loan Rate (defaults to 0%)"
+              .value=${this.loanRateInput}
+              @input=${this._onInput}
+            />
+          </div>
+
+          <div class="field">
+            <label for="apy">Deposit APY</label>
+            <input
+              id="apy"
+              name="apy"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="Deposit account APY"
+              .value=${this.apyInput}
+              @input=${this._onInput}
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="ccRate">Credit Card APR</label>
+            <input
+              id="ccRate"
+              name="ccRate"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="CC Rate (defaults to 28.99%)"
+              .value=${this.ccRateInput}
+              @input=${this._onInput}
+            />
+          </div>
+
+          <div class="field">
+            <label for="ccRewardsRate">Credit Card Rewards Rate</label>
+            <input
+              id="ccRewardsRate"
+              name="ccRewardsRate"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="Credit Card Rewards Rate"
+              .value=${this.ccRewardsRateInput}
+              @input=${this._onInput}
+            />
+          </div>
         </form>
 
         <div class="divider" aria-hidden="true">
@@ -131,9 +175,25 @@ class TradeoffWidget extends LitElement {
           <span>•</span>
         </div>
 
-        <div class="field result-block">
-          <label for="result"><span>Net Benefit (Cost)</span></label>
-          <output id="result" data-role="result" aria-live="polite">${this.resultText}</output>
+        <div class="results-grid">
+          <div class="field result-block">
+            <label for="result">Net benefit (or Cost) of BNPL + savings account</label>
+            <output id="result" data-role="result" aria-live="polite">${this.resultText}</output>
+          </div>
+
+          <div class="field result-block">
+            <label for="ccRewardsResult">One cycle credit card rewards on purchase</label>
+            <output id="ccRewardsResult" data-role="cc-rewards" aria-live="polite">
+              ${this.ccRewardsText}
+            </output>
+          </div>
+
+          <div class="field result-block">
+            <label for="ccInterestResult">One cycle credit card interest on purchase</label>
+            <output id="ccInterestResult" data-role="cc-interest" aria-live="polite">
+              ${this.ccInterestText}
+            </output>
+          </div>
         </div>
 
         <p class="error" data-role="error" role="alert">${this.errorMessage}</p>
@@ -192,20 +252,70 @@ class TradeoffWidget extends LitElement {
       return;
     }
 
+    let ccRewardsPercent = null;
+    if (this.ccRewardsRateInput !== '' && this.ccRewardsRateInput !== undefined) {
+      ccRewardsPercent = this._parseMoney(this.ccRewardsRateInput);
+      if (ccRewardsPercent === null) {
+        this._clearResult();
+        return;
+      }
+      if (ccRewardsPercent < 0) {
+        this._setError('Rewards rate must be zero or greater.');
+        return;
+      }
+    }
+
+    let ccRatePercent = null;
+    if (this.ccRateInput !== '' && this.ccRateInput !== undefined) {
+      ccRatePercent = this._parseMoney(this.ccRateInput);
+      if (ccRatePercent === null) {
+        this._clearResult();
+        return;
+      }
+      if (ccRatePercent < 0) {
+        this._setError('Credit card rate must be zero or greater.');
+        return;
+      }
+    }
+
     const loanRate = ratePercent === null ? 0 : ratePercent / 100;
     const depositApy = apyPercent / 100;
+    const ccRewardsRate = ccRewardsPercent === null ? 0 : ccRewardsPercent / 100;
+    const ccRate = (ccRatePercent === null ? DEFAULT_CC_RATE_PERCENT : ccRatePercent) / 100;
 
     const scenario = this._calculator.simulateScenario({
       principal,
       periodCount: termMonths,
       loanRate,
       depositApy,
+      ccRewardsRate,
+      ccRate,
     });
 
     const netValue = scenario?.net?.toDecimal ? scenario.net.toDecimal() : Number.NaN;
     this._lastNetValue = Number.isFinite(netValue) ? netValue : undefined;
+    const ccRewardsValue = scenario?.creditCardRewards?.toDecimal
+      ? scenario.creditCardRewards.toDecimal()
+      : Number.NaN;
+    const ccInterestValue = scenario?.creditCardInterest?.toDecimal
+      ? scenario.creditCardInterest.toDecimal()
+      : Number.NaN;
+    this._lastCcRewardsValue = Number.isFinite(ccRewardsValue) ? ccRewardsValue : undefined;
+    this._lastCcInterestValue = Number.isFinite(ccInterestValue) ? ccInterestValue : undefined;
+
     this._updateResult(this._lastNetValue);
-    this._emitChange({ principal, termMonths, loanRate, depositApy, netValue });
+    this._updateCreditCardResults(this._lastCcRewardsValue, this._lastCcInterestValue);
+    this._emitChange({
+      principal,
+      termMonths,
+      loanRate,
+      depositApy,
+      ccRewardsRate,
+      ccRate,
+      netValue,
+      creditCardRewards: ccRewardsValue,
+      creditCardInterest: ccInterestValue,
+    });
   }
 
   _emitChange(detail) {
@@ -229,6 +339,20 @@ class TradeoffWidget extends LitElement {
     this.resultText = `${isCost ? 'Cost' : 'Benefit'}: ${formatted}`;
   }
 
+  _updateCreditCardResults(rewardsValue, interestValue) {
+    if (!Number.isFinite(rewardsValue)) {
+      this.ccRewardsText = 'dollars';
+    } else {
+      this.ccRewardsText = this._formatCurrency(rewardsValue);
+    }
+
+    if (!Number.isFinite(interestValue)) {
+      this.ccInterestText = 'dollars';
+    } else {
+      this.ccInterestText = this._formatCurrency(interestValue);
+    }
+  }
+
   _setError(message) {
     this.errorMessage = message;
     this._clearResult();
@@ -236,7 +360,11 @@ class TradeoffWidget extends LitElement {
 
   _clearResult() {
     this._lastNetValue = undefined;
+    this._lastCcRewardsValue = undefined;
+    this._lastCcInterestValue = undefined;
     this.resultText = 'dollars gained or lost';
+    this.ccRewardsText = 'dollars';
+    this.ccInterestText = 'dollars';
   }
 
   _parseMoney(value) {
@@ -315,6 +443,7 @@ class TradeoffWidget extends LitElement {
     form {
       display: grid;
       gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     }
 
     .field {
@@ -360,6 +489,12 @@ class TradeoffWidget extends LitElement {
       letter-spacing: 12px;
       color: var(--tradeoff-divider, #7c858f);
       padding: 6px 0;
+    }
+
+    .results-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     }
 
     .result-block label {

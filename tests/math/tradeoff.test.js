@@ -109,4 +109,48 @@ describe('TradeoffComparison', () => {
       expect(scenario.net.toDecimal()).toBeCloseTo(-33.8545, 4);
     });
   });
+
+  describe('simulateScenario credit card comparisons', () => {
+    it('returns credit card rewards and one-cycle interest alongside deposit net', () => {
+      const calculator = new TradeoffComparison({ periodDays: financialCalendar.daysInMonth });
+      const purchaseAmount = 500;
+      const ccRewardsRate = 0.015;
+      const ccRate = 0.2899;
+
+      const scenario = calculator.simulateScenario({
+        principal: purchaseAmount,
+        periodCount: 1,
+        loanRate: 0,
+        depositApy: 0,
+        ccRewardsRate,
+        ccRate,
+      });
+
+      const expectedRewards = purchaseAmount * ccRewardsRate;
+      const expectedInterest =
+        purchaseAmount *
+        (Math.pow(1 + ccRate / financialCalendar.daysInYear, financialCalendar.daysInMonth) - 1);
+
+      expect(scenario.creditCardRewards.toDecimal()).toBeCloseTo(expectedRewards, 8);
+      expect(scenario.creditCardInterest.toDecimal()).toBeCloseTo(expectedInterest, 8);
+      expect(Math.abs(scenario.net.toDecimal())).toBeLessThan(0.02);
+    });
+
+    it('uses the configured period days when computing credit card interest', () => {
+      const calculator = new TradeoffComparison({ periodDays: 15 });
+      const ccRate = 0.25;
+
+      const scenario = calculator.simulateScenario({
+        principal: 200,
+        periodCount: 1,
+        loanRate: 0,
+        depositApy: 0,
+        ccRewardsRate: 0,
+        ccRate,
+      });
+
+      const expectedInterest = 200 * (Math.pow(1 + ccRate / financialCalendar.daysInYear, 15) - 1);
+      expect(scenario.creditCardInterest.toDecimal()).toBeCloseTo(expectedInterest, 8);
+    });
+  });
 });
