@@ -5,7 +5,7 @@
  */
 
 const FIXED_PRECISION = 20;
-const SCALE = 10 ** FIXED_PRECISION;
+const SCALE = 10n ** BigInt(FIXED_PRECISION);
 
 function assertAmount(candidate) {
   if (!(candidate instanceof Amount)) {
@@ -13,26 +13,29 @@ function assertAmount(candidate) {
   }
 }
 
-function createAmount(integerValue) {
-  const amount = Object.create(Amount.prototype);
-  amount.integerValue = integerValue;
-  return amount;
-}
-
 /**
  * Represents a specific monetary value, ie $18.43
  * @class Amount
  */
 class Amount {
+  #integerValue;
   /**
-   * @param {number} value The monetary value to represent
+   * @param {number|} value The monetary value to represent
    */
   constructor(value) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
       throw new Error('Value must be a finite number');
     }
+    //TODO: this needs to use bigint math and also update all of the below methods that return
+    //new amounts to correctly pass through bigints instead of converting back and forth
 
-    this.integerValue = Math.trunc(value * SCALE);
+    this.#integerValue = BigInt(Math.trunc(value * 10 ** FIXED_PRECISION));
+  }
+
+  static #_fromAmountInteger(integer) {
+    const amount = Object.create(Amount.prototype);
+    amount.integerValue = integer;
+    return amount;
   }
 
   /**
@@ -45,9 +48,9 @@ class Amount {
   addTo(augend) {
     assertAmount(augend);
 
-    const resultValue = this.integerValue + augend.integerValue;
+    const resultValue = this.#integerValue + augend.#integerValue;
 
-    return createAmount(resultValue);
+    return Amount.#_fromAmountInteger(resultValue);
   }
 
   /**
@@ -60,9 +63,9 @@ class Amount {
   subtractFrom(subtrahend) {
     assertAmount(subtrahend);
 
-    const resultValue = this.integerValue - subtrahend.integerValue;
+    const resultValue = this.#integerValue - subtrahend.#integerValue;
 
-    return createAmount(resultValue);
+    return Amount.#_fromAmountInteger(resultValue);
   }
 
   /**
@@ -75,10 +78,10 @@ class Amount {
   multiplyBy(multiplicand) {
     assertAmount(multiplicand);
 
-    const product = this.integerValue * multiplicand.integerValue;
-    const resultValue = Math.trunc(product / SCALE);
+    const product = this.#integerValue * multiplicand.#integerValue;
+    const resultValue = product / SCALE;
 
-    return createAmount(resultValue);
+    return Amount.#_fromAmountInteger(resultValue);
   }
 
   /**
@@ -91,22 +94,22 @@ class Amount {
   divideBy(divisor) {
     assertAmount(divisor);
 
-    if (divisor.integerValue === 0) {
+    if (divisor.#integerValue === 0n) {
       throw new Error('Cannot divide by zero');
     }
 
-    const numerator = this.integerValue * SCALE;
-    const resultValue = Math.trunc(numerator / divisor.integerValue);
+    const numerator = this.#integerValue * SCALE;
+    const resultValue = numerator / divisor.#integerValue;
 
-    return createAmount(resultValue);
+    return Amount.#_fromAmountInteger(resultValue);
   }
 
   /**
-   * Converts the internal integer representation to a decimal number.
+   * Lossy conversion to a decimal number.
    * @returns {number}
    */
   toDecimal() {
-    return this.integerValue / SCALE;
+    return Number(this.#integerValue) / Number(SCALE);
   }
 
   /**
@@ -129,6 +132,32 @@ class Amount {
     }
 
     return result;
+  }
+
+  /**
+   * Checks for equality with another instance of Amount
+   * @param {Amount} other Another instance of the Amount object to check for equality
+   * @returns True if the internal fixed precision representations are equal, false otherwise
+   */
+  equals(other) {
+    if (!other instanceof Amount) {
+      throw new Error('Cannot check equality with non-Amount type');
+    }
+
+    return this.#integerValue === other.#integerValue;
+  }
+
+  /**
+   * lessThan compares this instance of amount against another instance of amount
+   * @param {Amount} other Another instance of Amount to be compared
+   * @returns True if this instance of Amount is strictly less than the other instance of Amount
+   */
+  lessThan(other) {
+    if (!other instanceof Amount) {
+      throw new Error('Cannot compare with non-Amount type');
+    }
+
+    return this.#integerValue < other.#integerValue;
   }
 }
 

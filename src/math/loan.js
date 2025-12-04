@@ -38,6 +38,9 @@ class Account {
     if (!Number.isInteger(periodCount) || periodCount <= 0) {
       throw new Error('Period count must be a positive integer');
     }
+    if (principal < 0) {
+      throw new Error('Principal must be zero or greater');
+    }
 
     const normalizedPeriodType = typeof periodType === 'string' ? periodType.toUpperCase() : '';
 
@@ -50,14 +53,9 @@ class Account {
     }
     this.nominalAnnualRate = rate instanceof Amount ? rate : new Amount(rate);
 
-    const principalAmount = principal instanceof Amount ? principal : new Amount(principal);
-    if (principalAmount.integerValue < 0) {
-      throw new Error('Principal must be zero or greater');
-    }
-
     this.periodCount = periodCount;
     this.periodType = normalizedPeriodType;
-    this.principal = principalAmount;
+    this.principal = principal instanceof Amount ? principal : new Amount(principal);
     this._periodsPerYear = MONTHS_PER_YEAR;
     this._periodicRate = this.nominalAnnualRate.divideBy(MONTHS_PER_YEAR_AMOUNT);
     this._cachedPaymentAmount = undefined;
@@ -79,16 +77,17 @@ class Account {
    * @returns {Amount} Returns an amount representing the interest charge
    */
   totalInterest() {
-    if (this._periodicRate.integerValue === 0) {
-      return new Amount(0);
+    const fixedZero = new Amount(0);
+    if (this._periodicRate.equals(fixedZero)) {
+      return fixedZero;
     }
 
     const payment = this._getPaymentAmount();
     const totalPaidAmount = payment.multiplyBy(new Amount(this.periodCount));
     const rawInterestAmount = totalPaidAmount.subtractFrom(this.principal);
 
-    if (rawInterestAmount.integerValue <= 0) {
-      return new Amount(0);
+    if (rawInterestAmount.lessThan(fixedZero) || rawInterestAmount.equals(fixedZero)) {
+      return fixedZero;
     }
 
     const flooredInterest = roundDownToCents(rawInterestAmount);
@@ -111,11 +110,12 @@ class Account {
   }
 
   _calculatePaymentAmount() {
-    if (this.principal.integerValue === 0) {
-      return new Amount(0);
+    const fixedZero = new Amount(0);
+    if (this.principal.equals(fixedZero)) {
+      return fixedZero;
     }
 
-    if (this._periodicRate.integerValue === 0) {
+    if (this._periodicRate.equals(fixedZero)) {
       // Zero interest loans round down to the nearest cent for every payment, favoring the borrower.
       const basePayment = this.principal.divideBy(new Amount(this.periodCount));
       return roundDownToCents(basePayment);

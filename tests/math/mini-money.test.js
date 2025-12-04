@@ -6,9 +6,9 @@ describe('mini-money Amount', () => {
   describe('constructor', () => {
     it('scales values into integer representation based on precision', () => {
       const amount = new Amount(18.43);
-      const scale = 10 ** FIXED_PRECISION;
+      const scale = 10n ** BigInt(FIXED_PRECISION);
 
-      expect(amount.integerValue).toBe(Math.trunc(18.43 * scale));
+      expect(amount.integerValue).toBe(BigInt(Math.trunc(18.43 * 10 ** FIXED_PRECISION)));
       expect(amount.toDecimal()).toBeCloseTo(18.43, 10);
     });
   });
