@@ -20,12 +20,13 @@ import { Amount } from './mini-money.js';
 class Account {
   #apy;
   #balance;
+  #dailyRate;
   /**
    * "Opens" an account with a opening balance and the percentage yield to be used for subsequent calculations.
    *  Values may be specified as numbers of as Amounts. Values provided as JS numbers will be converted to Amounts
    *  using the global Amount.precision.
-   * @param {number|Amount} openingBalance The opening account balance, defaults to zero
-   * @param {number|Amount} apy The annual percentage yield for the account, defaults to zero
+   * @param {number} openingBalance The opening account balance, defaults to zero
+   * @param {number} apy The annual percentage yield for the account, defaults to zero
    */
   constructor(openingBalance = 0, apy = 0) {
     this.#balance = new Amount(openingBalance);
@@ -36,7 +37,7 @@ class Account {
     // Ultimately, we have to determine the 365th root somehow in order to go from a APY to a daily rate (
     // assuming daily componding.)
 
-    this._dailyRate = new Amount(Math.pow(1 + apy, 1 / financialCalendar.daysInYear) - 1);
+    this.#dailyRate = new Amount(Math.pow(1 + apy, 1 / financialCalendar.daysInYear) - 1);
   }
 
   /**
@@ -68,16 +69,11 @@ class Account {
   /**
    * Withdraw a specified amount of funds from the account. Withdrawal amounts specified as a JS number
    * will be converted to Amounts using the global Amount.precision.
-   * @param {number|Amount} withdrawal The amount to withdraw from the account
+   * @param {number} withdrawal The amount to withdraw from the account
    * @returns {Account} This account updated by the withdrawal
    */
   withdraw(withdrawal) {
-    let withdrawalAmount;
-    if (withdrawal instanceof Amount) {
-      withdrawalAmount = withdrawal;
-    } else {
-      withdrawalAmount = new Amount(withdrawal);
-    }
+    const withdrawalAmount = new Amount(withdrawal);
 
     const zeroAmount = new Amount(0);
     if (withdrawalAmount.lessThan(zeroAmount)) {
@@ -108,7 +104,7 @@ class Account {
     }
 
     for (let i = 0; i < days; i++) {
-      this.#balance = this.#balance.addTo(this.#balance.multiplyBy(this._dailyRate));
+      this.#balance = this.#balance.addTo(this.#balance.multiplyBy(this.#dailyRate));
     }
 
     return this;

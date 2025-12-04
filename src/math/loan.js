@@ -33,8 +33,8 @@ class Account {
    * 'user' of the loan makes payments on the due date exactly as perscribed by the payment schedule.
    * @param {number} periodCount The number of periods in this loan
    * @param {string} periodType The type of period, only 'MONTH' is supported
-   * @param {number|Amount} rate The simple, non-compound, nominal annual interest charge associated with this loan
-   * @param {number|Amount} principal The amount of money being loaned
+   * @param {number} rate The simple, non-compound, nominal annual interest charge associated with this loan
+   * @param {number} principal The amount of money being loaned
    */
   constructor(periodCount, periodType, rate, principal) {
     if (!Number.isInteger(periodCount) || periodCount <= 0) {
@@ -53,11 +53,11 @@ class Account {
     if (typeof rate !== 'number' || Number.isNaN(rate) || !Number.isFinite(rate) || rate < 0) {
       throw new Error('Rate must be a non-negative finite number');
     }
-    this.nominalAnnualRate = rate instanceof Amount ? rate : new Amount(rate);
+    this.nominalAnnualRate = new Amount(rate);
 
     this.periodCount = periodCount;
     this.periodType = normalizedPeriodType;
-    this.principal = principal instanceof Amount ? principal : new Amount(principal);
+    this.principal = new Amount(principal);
     this.#periodicRate = this.nominalAnnualRate.divideBy(MONTHS_PER_YEAR_AMOUNT);
     this.#cachedPaymentAmount = undefined;
   }

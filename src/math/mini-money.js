@@ -25,7 +25,7 @@ class Amount {
    * to 20 digits. It is closer to 15 digits total due to converting the input number into a large
    * integer prior to precise handling. I deemed this 'fine' since the intended usage is for calcuations
    * on user entered montary amounts which typically only have 2 or 3 digits after the decimal place.
-   * @param {number|} value The monetary value to represent
+   * @param {number} value The monetary value to represent
    */
   constructor(value) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
