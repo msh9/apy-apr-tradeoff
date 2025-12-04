@@ -19,11 +19,12 @@ class Account {
   constructor({ apr = 0, rewardsRate = 0 } = {}) {
     this._apr = apr instanceof Amount ? apr : new Amount(apr);
     this._rewardsRate = rewardsRate instanceof Amount ? rewardsRate : new Amount(rewardsRate);
+    const zeroAmount = new Amount(0);
 
-    if (this._apr.integerValue < 0) {
+    if (this._apr.lessThan(zeroAmount)) {
       throw new Error('APR must be zero or greater');
     }
-    if (this._rewardsRate.integerValue < 0) {
+    if (this._rewardsRate.lessThan(zeroAmount)) {
       throw new Error('Rewards rate must be zero or greater');
     }
 
@@ -56,11 +57,12 @@ class Account {
     }
 
     const startingBalance = balance instanceof Amount ? balance : new Amount(balance);
-    if (startingBalance.integerValue < 0) {
+    const zeroAmount = new Amount(0);
+    if (startingBalance.lessThan(zeroAmount)) {
       throw new Error('Balance must be zero or greater');
     }
 
-    if (startingBalance.integerValue === 0 || days === 0 || this._dailyRate.integerValue === 0) {
+    if (startingBalance.equals(zeroAmount) || days === 0 || this._dailyRate.equals(zeroAmount)) {
       return new Amount(0);
     }
 

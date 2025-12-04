@@ -77,7 +77,8 @@ class Account {
       withdrawalAmount = new Amount(withdrawal);
     }
 
-    if (withdrawalAmount.integerValue < 0) {
+    const zeroAmount = new Amount(0);
+    if (withdrawalAmount.lessThan(zeroAmount)) {
       throw new Error('Withdrawal must be zero or greater');
     }
 

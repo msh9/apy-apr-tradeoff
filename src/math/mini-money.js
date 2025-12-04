@@ -33,8 +33,8 @@ class Amount {
   }
 
   static #_fromAmountInteger(integer) {
-    const amount = Object.create(Amount.prototype);
-    amount.integerValue = integer;
+    const amount = new Amount(0);
+    amount.#integerValue = integer;
     return amount;
   }
 
@@ -137,12 +137,10 @@ class Amount {
   /**
    * Checks for equality with another instance of Amount
    * @param {Amount} other Another instance of the Amount object to check for equality
-   * @returns True if the internal fixed precision representations are equal, false otherwise
+   * @returns {boolean} True if the internal fixed precision representations are equal, false otherwise
    */
   equals(other) {
-    if (!other instanceof Amount) {
-      throw new Error('Cannot check equality with non-Amount type');
-    }
+    assertAmount(other);
 
     return this.#integerValue === other.#integerValue;
   }
@@ -150,12 +148,10 @@ class Amount {
   /**
    * lessThan compares this instance of amount against another instance of amount
    * @param {Amount} other Another instance of Amount to be compared
-   * @returns True if this instance of Amount is strictly less than the other instance of Amount
+   * @returns {boolean} True if this instance of Amount is strictly less than the other instance of Amount
    */
   lessThan(other) {
-    if (!other instanceof Amount) {
-      throw new Error('Cannot compare with non-Amount type');
-    }
+    assertAmount(other);
 
     return this.#integerValue < other.#integerValue;
   }

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { Amount, FIXED_PRECISION } from '../../src/math/mini-money.js';
+import { Amount } from '../../src/math/mini-money.js';
 
 describe('mini-money Amount', () => {
   describe('constructor', () => {
     it('scales values into integer representation based on precision', () => {
       const amount = new Amount(18.43);
-      const scale = 10n ** BigInt(FIXED_PRECISION);
+      const expectedAmount = new Amount(18.43);
 
-      expect(amount.integerValue).toBe(BigInt(Math.trunc(18.43 * 10 ** FIXED_PRECISION)));
+      expect(amount.equals(expectedAmount)).toBe(true);
       expect(amount.toDecimal()).toBeCloseTo(18.43, 10);
     });
   });
@@ -213,6 +213,52 @@ describe('mini-money Amount', () => {
       const base = new Amount(2);
 
       expect(() => base.pow(1.5)).toThrow(/non-negative integer/i);
+    });
+  });
+
+  describe('equals', () => {
+    it('returns true when amounts share the same value', () => {
+      const lhs = new Amount(42.195);
+      const rhs = new Amount(42.195);
+
+      expect(lhs.equals(rhs)).toBe(true);
+    });
+
+    it('returns false when values differ', () => {
+      const lhs = new Amount(10.5);
+      const rhs = new Amount(10.75);
+
+      expect(lhs.equals(rhs)).toBe(false);
+    });
+
+    it('rejects non-Amount comparisons', () => {
+      const lhs = new Amount(1);
+
+      expect(() => lhs.equals(1)).toThrow(/Amount/);
+    });
+  });
+
+  describe('lessThan', () => {
+    it('returns true when the amount is strictly less than another', () => {
+      const lhs = new Amount(9.99);
+      const rhs = new Amount(10.0);
+
+      expect(lhs.lessThan(rhs)).toBe(true);
+    });
+
+    it('returns false when amounts are equal or greater', () => {
+      const lhs = new Amount(5);
+      const rhs = new Amount(5);
+      const smaller = new Amount(4.99);
+
+      expect(lhs.lessThan(rhs)).toBe(false);
+      expect(lhs.lessThan(smaller)).toBe(false);
+    });
+
+    it('rejects non-Amount comparisons', () => {
+      const lhs = new Amount(1);
+
+      expect(() => lhs.lessThan(0)).toThrow(/Amount/);
     });
   });
 });
