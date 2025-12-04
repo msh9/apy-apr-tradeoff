@@ -35,6 +35,34 @@ describe('mini-money Amount', () => {
     });
   });
 
+  describe('toPreciseString', () => {
+    it('returns a string with 20 fractional digits', () => {
+      const amount = new Amount(18.43);
+
+      expect(amount.toPreciseString()).toBe('18.43000000000000000000');
+    });
+
+    it('preserves leading zeros for small amounts', () => {
+      const amount = new Amount(0.000123);
+
+      expect(amount.toPreciseString()).toBe('0.00012300000000000000');
+    });
+
+    it('handles negative values', () => {
+      const amount = new Amount(-1.5);
+
+      expect(amount.toPreciseString()).toBe('-1.50000000000000000000');
+    });
+
+    it('handles infinite fractions', () => {
+      const divisor = new Amount(3);
+      const numerator = new Amount(10);
+
+      const result = numerator.divideBy(divisor);
+      expect(result.toPreciseString()).toBe('3.33333333333333333333');
+    });
+  });
+
   describe('addTo', () => {
     it('adds values that already share the same precision', () => {
       const lhs = new Amount(12.34);

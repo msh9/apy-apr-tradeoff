@@ -14,20 +14,23 @@ function assertAmount(candidate) {
 }
 
 /**
- * Represents a specific monetary value, ie $18.43
+ * Represents a specific monetary value, ie $18.43.
  * @class Amount
  */
 class Amount {
   #integerValue;
+
   /**
+   * Note well, that this constructor is not currently precise
+   * to 20 digits. It is closer to 15 digits total due to converting the input number into a large
+   * integer prior to precise handling. I deemed this 'fine' since the intended usage is for calcuations
+   * on user entered montary amounts which typically only have 2 or 3 digits after the decimal place.
    * @param {number|} value The monetary value to represent
    */
   constructor(value) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
       throw new Error('Value must be a finite number');
     }
-    //TODO: this needs to use bigint math and also update all of the below methods that return
-    //new amounts to correctly pass through bigints instead of converting back and forth
 
     this.#integerValue = BigInt(Math.trunc(value * 10 ** FIXED_PRECISION));
   }
@@ -105,11 +108,26 @@ class Amount {
   }
 
   /**
-   * Lossy conversion to a decimal number.
+   * Lossy conversion to a decimal number. Likes the constructor, this is not precise to 20 digits and instead closer
+   * to 14 or 15.
    * @returns {number}
    */
   toDecimal() {
     return Number(this.#integerValue) / Number(SCALE);
+  }
+
+  /**
+   * Returns a string representation of this amount that is precise to 20 digits.
+   * @returns {string}
+   */
+  toPreciseString() {
+    const isNegative = this.#integerValue < 0n;
+    const absoluteValue = isNegative ? -this.#integerValue : this.#integerValue;
+    const padded = absoluteValue.toString().padStart(FIXED_PRECISION + 1, '0');
+    const wholePortion = padded.slice(0, -FIXED_PRECISION) || '0';
+    const fractionalPortion = padded.slice(-FIXED_PRECISION);
+
+    return `${isNegative ? '-' : ''}${wholePortion}.${fractionalPortion}`;
   }
 
   /**
