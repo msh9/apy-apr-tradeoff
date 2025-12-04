@@ -18,23 +18,26 @@ import { Amount } from './mini-money.js';
  * @class Account
  */
 class Account {
+  #apy;
+  #balance;
+  #dailyRate;
   /**
    * "Opens" an account with a opening balance and the percentage yield to be used for subsequent calculations.
    *  Values may be specified as numbers of as Amounts. Values provided as JS numbers will be converted to Amounts
    *  using the global Amount.precision.
-   * @param {number|Amount} openingBalance The opening account balance, defaults to zero
-   * @param {number|Amount} apy The annual percentage yield for the account, defaults to zero
+   * @param {number} openingBalance The opening account balance, defaults to zero
+   * @param {number} apy The annual percentage yield for the account, defaults to zero
    */
   constructor(openingBalance = 0, apy = 0) {
-    this._balance = new Amount(openingBalance);
-    this._apy = new Amount(apy);
+    this.#balance = new Amount(openingBalance);
+    this.#apy = new Amount(apy);
     // We do the following calculation once and acknowledge here that it is likely only accurate to ~15 places
     // because we're using JS' number representation to perform it. See MDN for more information,
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number#number_encoding
     // Ultimately, we have to determine the 365th root somehow in order to go from a APY to a daily rate (
     // assuming daily componding.)
 
-    this._dailyRate = new Amount(Math.pow(1 + apy, 1 / financialCalendar.daysInYear) - 1);
+    this.#dailyRate = new Amount(Math.pow(1 + apy, 1 / financialCalendar.daysInYear) - 1);
   }
 
   /**
@@ -42,7 +45,7 @@ class Account {
    * @property {Amount} apy
    */
   get apy() {
-    return this._apy;
+    return this.#apy;
   }
 
   /**
@@ -50,7 +53,7 @@ class Account {
    * @property {Amount} balance
    */
   get balance() {
-    return this._balance;
+    return this.#balance;
   }
 
   /**
@@ -60,28 +63,24 @@ class Account {
    * @param {number|Amount} newBalance The new balance
    */
   set balance(newBalance) {
-    this._balance = newBalance instanceof Amount ? newBalance : new Amount(newBalance);
+    this.#balance = newBalance instanceof Amount ? newBalance : new Amount(newBalance);
   }
 
   /**
    * Withdraw a specified amount of funds from the account. Withdrawal amounts specified as a JS number
    * will be converted to Amounts using the global Amount.precision.
-   * @param {number|Amount} withdrawal The amount to withdraw from the account
+   * @param {number} withdrawal The amount to withdraw from the account
    * @returns {Account} This account updated by the withdrawal
    */
   withdraw(withdrawal) {
-    let withdrawalAmount;
-    if (withdrawal instanceof Amount) {
-      withdrawalAmount = withdrawal;
-    } else {
-      withdrawalAmount = new Amount(withdrawal);
-    }
+    const withdrawalAmount = new Amount(withdrawal);
 
-    if (withdrawalAmount.integerValue < 0) {
+    const zeroAmount = new Amount(0);
+    if (withdrawalAmount.lessThan(zeroAmount)) {
       throw new Error('Withdrawal must be zero or greater');
     }
 
-    this._balance = this._balance.subtractFrom(withdrawalAmount);
+    this.#balance = this.#balance.subtractFrom(withdrawalAmount);
 
     return this;
   }
@@ -105,7 +104,7 @@ class Account {
     }
 
     for (let i = 0; i < days; i++) {
-      this._balance = this._balance.addTo(this._balance.multiplyBy(this._dailyRate));
+      this.#balance = this.#balance.addTo(this.#balance.multiplyBy(this.#dailyRate));
     }
 
     return this;

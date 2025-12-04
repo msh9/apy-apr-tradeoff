@@ -5,7 +5,7 @@
  */
 
 const FIXED_PRECISION = 20;
-const SCALE = 10 ** FIXED_PRECISION;
+const SCALE = 10n ** BigInt(FIXED_PRECISION);
 
 function assertAmount(candidate) {
   if (!(candidate instanceof Amount)) {
@@ -13,18 +13,18 @@ function assertAmount(candidate) {
   }
 }
 
-function createAmount(integerValue) {
-  const amount = Object.create(Amount.prototype);
-  amount.integerValue = integerValue;
-  return amount;
-}
-
 /**
- * Represents a specific monetary value, ie $18.43
+ * Represents a specific monetary value, ie $18.43.
  * @class Amount
  */
 class Amount {
+  #integerValue;
+
   /**
+   * Note well, that this constructor is not currently precise
+   * to 20 digits. It is closer to 15 digits total due to converting the input number into a large
+   * integer prior to precise handling. I deemed this 'fine' since the intended usage is for calcuations
+   * on user entered montary amounts which typically only have 2 or 3 digits after the decimal place.
    * @param {number} value The monetary value to represent
    */
   constructor(value) {
@@ -32,7 +32,13 @@ class Amount {
       throw new Error('Value must be a finite number');
     }
 
-    this.integerValue = Math.trunc(value * SCALE);
+    this.#integerValue = BigInt(Math.trunc(value * 10 ** FIXED_PRECISION));
+  }
+
+  static #_fromAmountInteger(integer) {
+    const amount = new Amount(0);
+    amount.#integerValue = integer;
+    return amount;
   }
 
   /**
@@ -45,9 +51,9 @@ class Amount {
   addTo(augend) {
     assertAmount(augend);
 
-    const resultValue = this.integerValue + augend.integerValue;
+    const resultValue = this.#integerValue + augend.#integerValue;
 
-    return createAmount(resultValue);
+    return Amount.#_fromAmountInteger(resultValue);
   }
 
   /**
@@ -60,9 +66,9 @@ class Amount {
   subtractFrom(subtrahend) {
     assertAmount(subtrahend);
 
-    const resultValue = this.integerValue - subtrahend.integerValue;
+    const resultValue = this.#integerValue - subtrahend.#integerValue;
 
-    return createAmount(resultValue);
+    return Amount.#_fromAmountInteger(resultValue);
   }
 
   /**
@@ -75,10 +81,10 @@ class Amount {
   multiplyBy(multiplicand) {
     assertAmount(multiplicand);
 
-    const product = this.integerValue * multiplicand.integerValue;
-    const resultValue = Math.trunc(product / SCALE);
+    const product = this.#integerValue * multiplicand.#integerValue;
+    const resultValue = product / SCALE;
 
-    return createAmount(resultValue);
+    return Amount.#_fromAmountInteger(resultValue);
   }
 
   /**
@@ -91,22 +97,37 @@ class Amount {
   divideBy(divisor) {
     assertAmount(divisor);
 
-    if (divisor.integerValue === 0) {
+    if (divisor.#integerValue === 0n) {
       throw new Error('Cannot divide by zero');
     }
 
-    const numerator = this.integerValue * SCALE;
-    const resultValue = Math.trunc(numerator / divisor.integerValue);
+    const numerator = this.#integerValue * SCALE;
+    const resultValue = numerator / divisor.#integerValue;
 
-    return createAmount(resultValue);
+    return Amount.#_fromAmountInteger(resultValue);
   }
 
   /**
-   * Converts the internal integer representation to a decimal number.
+   * Lossy conversion to a decimal number. Likes the constructor, this is not precise to 20 digits and instead closer
+   * to 14 or 15.
    * @returns {number}
    */
   toDecimal() {
-    return this.integerValue / SCALE;
+    return Number(this.#integerValue) / Number(SCALE);
+  }
+
+  /**
+   * Returns a string representation of this amount that is precise to 20 digits.
+   * @returns {string}
+   */
+  toPreciseString() {
+    const isNegative = this.#integerValue < 0n;
+    const absoluteValue = isNegative ? -this.#integerValue : this.#integerValue;
+    const padded = absoluteValue.toString().padStart(FIXED_PRECISION + 1, '0');
+    const wholePortion = padded.slice(0, -FIXED_PRECISION) || '0';
+    const fractionalPortion = padded.slice(-FIXED_PRECISION);
+
+    return `${isNegative ? '-' : ''}${wholePortion}.${fractionalPortion}`;
   }
 
   /**
@@ -129,6 +150,28 @@ class Amount {
     }
 
     return result;
+  }
+
+  /**
+   * Checks for equality with another instance of Amount
+   * @param {Amount} other Another instance of the Amount object to check for equality
+   * @returns {boolean} True if the internal fixed precision representations are equal, false otherwise
+   */
+  equals(other) {
+    assertAmount(other);
+
+    return this.#integerValue === other.#integerValue;
+  }
+
+  /**
+   * lessThan compares this instance of amount against another instance of amount
+   * @param {Amount} other Another instance of Amount to be compared
+   * @returns {boolean} True if this instance of Amount is strictly less than the other instance of Amount
+   */
+  lessThan(other) {
+    assertAmount(other);
+
+    return this.#integerValue < other.#integerValue;
   }
 }
 

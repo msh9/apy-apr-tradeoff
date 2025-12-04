@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { Amount, FIXED_PRECISION } from '../../src/math/mini-money.js';
+import { Amount } from '../../src/math/mini-money.js';
 
 describe('mini-money Amount', () => {
   describe('constructor', () => {
     it('scales values into integer representation based on precision', () => {
       const amount = new Amount(18.43);
-      const scale = 10 ** FIXED_PRECISION;
+      const expectedAmount = new Amount(18.43);
 
-      expect(amount.integerValue).toBe(Math.trunc(18.43 * scale));
+      expect(amount.equals(expectedAmount)).toBe(true);
       expect(amount.toDecimal()).toBeCloseTo(18.43, 10);
     });
   });
@@ -32,6 +32,34 @@ describe('mini-money Amount', () => {
 
       expect(result.toDecimal()).toBeCloseTo(10.25, 10);
       expect(amount.toDecimal()).toBeCloseTo(10, 10);
+    });
+  });
+
+  describe('toPreciseString', () => {
+    it('returns a string with 20 fractional digits', () => {
+      const amount = new Amount(18.43);
+
+      expect(amount.toPreciseString()).toBe('18.43000000000000000000');
+    });
+
+    it('preserves leading zeros for small amounts', () => {
+      const amount = new Amount(0.000123);
+
+      expect(amount.toPreciseString()).toBe('0.00012300000000000000');
+    });
+
+    it('handles negative values', () => {
+      const amount = new Amount(-1.5);
+
+      expect(amount.toPreciseString()).toBe('-1.50000000000000000000');
+    });
+
+    it('handles infinite fractions', () => {
+      const divisor = new Amount(3);
+      const numerator = new Amount(10);
+
+      const result = numerator.divideBy(divisor);
+      expect(result.toPreciseString()).toBe('3.33333333333333333333');
     });
   });
 
@@ -213,6 +241,52 @@ describe('mini-money Amount', () => {
       const base = new Amount(2);
 
       expect(() => base.pow(1.5)).toThrow(/non-negative integer/i);
+    });
+  });
+
+  describe('equals', () => {
+    it('returns true when amounts share the same value', () => {
+      const lhs = new Amount(42.195);
+      const rhs = new Amount(42.195);
+
+      expect(lhs.equals(rhs)).toBe(true);
+    });
+
+    it('returns false when values differ', () => {
+      const lhs = new Amount(10.5);
+      const rhs = new Amount(10.75);
+
+      expect(lhs.equals(rhs)).toBe(false);
+    });
+
+    it('rejects non-Amount comparisons', () => {
+      const lhs = new Amount(1);
+
+      expect(() => lhs.equals(1)).toThrow(/Amount/);
+    });
+  });
+
+  describe('lessThan', () => {
+    it('returns true when the amount is strictly less than another', () => {
+      const lhs = new Amount(9.99);
+      const rhs = new Amount(10.0);
+
+      expect(lhs.lessThan(rhs)).toBe(true);
+    });
+
+    it('returns false when amounts are equal or greater', () => {
+      const lhs = new Amount(5);
+      const rhs = new Amount(5);
+      const smaller = new Amount(4.99);
+
+      expect(lhs.lessThan(rhs)).toBe(false);
+      expect(lhs.lessThan(smaller)).toBe(false);
+    });
+
+    it('rejects non-Amount comparisons', () => {
+      const lhs = new Amount(1);
+
+      expect(() => lhs.lessThan(0)).toThrow(/Amount/);
     });
   });
 });
