@@ -24,6 +24,8 @@ function roundDownToCents(value) {
  * @class Account
  */
 class Account {
+  #periodicRate;
+  #cachedPaymentAmount = undefined;
   /**
    * Creates a immutable loan account. This class does not attempt to emulate a real banking system and therefore does
    * not
@@ -56,9 +58,8 @@ class Account {
     this.periodCount = periodCount;
     this.periodType = normalizedPeriodType;
     this.principal = principal instanceof Amount ? principal : new Amount(principal);
-    this._periodsPerYear = MONTHS_PER_YEAR;
-    this._periodicRate = this.nominalAnnualRate.divideBy(MONTHS_PER_YEAR_AMOUNT);
-    this._cachedPaymentAmount = undefined;
+    this.#periodicRate = this.nominalAnnualRate.divideBy(MONTHS_PER_YEAR_AMOUNT);
+    this.#cachedPaymentAmount = undefined;
   }
 
   /**
@@ -67,7 +68,7 @@ class Account {
    * @returns {Amount} payment amount per period
    */
   payment() {
-    return this._getPaymentAmount();
+    return this.#getPaymentAmount();
   }
 
   /**
@@ -78,11 +79,11 @@ class Account {
    */
   totalInterest() {
     const fixedZero = new Amount(0);
-    if (this._periodicRate.equals(fixedZero)) {
+    if (this.#periodicRate.equals(fixedZero)) {
       return fixedZero;
     }
 
-    const payment = this._getPaymentAmount();
+    const payment = this.#getPaymentAmount();
     const totalPaidAmount = payment.multiplyBy(new Amount(this.periodCount));
     const rawInterestAmount = totalPaidAmount.subtractFrom(this.principal);
 
@@ -101,29 +102,29 @@ class Account {
     return flooredInterest;
   }
 
-  _getPaymentAmount() {
-    if (this._cachedPaymentAmount === undefined) {
-      this._cachedPaymentAmount = this._calculatePaymentAmount();
+  #getPaymentAmount() {
+    if (this.#cachedPaymentAmount === undefined) {
+      this.#cachedPaymentAmount = this.#calculatePaymentAmount();
     }
 
-    return this._cachedPaymentAmount;
+    return this.#cachedPaymentAmount;
   }
 
-  _calculatePaymentAmount() {
+  #calculatePaymentAmount() {
     const fixedZero = new Amount(0);
     if (this.principal.equals(fixedZero)) {
       return fixedZero;
     }
 
-    if (this._periodicRate.equals(fixedZero)) {
+    if (this.#periodicRate.equals(fixedZero)) {
       // Zero interest loans round down to the nearest cent for every payment, favoring the borrower.
       const basePayment = this.principal.divideBy(new Amount(this.periodCount));
       return roundDownToCents(basePayment);
     }
 
-    const ratePlusOne = this._periodicRate.addTo(new Amount(1));
+    const ratePlusOne = this.#periodicRate.addTo(new Amount(1));
     const growthFactor = ratePlusOne.pow(this.periodCount);
-    const numerator = this.principal.multiplyBy(this._periodicRate).multiplyBy(growthFactor);
+    const numerator = this.principal.multiplyBy(this.#periodicRate).multiplyBy(growthFactor);
     const denominator = growthFactor.subtractFrom(new Amount(1));
 
     return numerator.divideBy(denominator);

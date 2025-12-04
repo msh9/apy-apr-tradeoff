@@ -11,24 +11,26 @@ import { Amount } from './mini-money.js';
  * @class Account
  */
 class Account {
+  #apr;
+  #rewardsRate;
   /**
    * @param {object} [options]
    * @param {number|Amount} [options.apr=0] Nominal annual percentage rate expressed as a decimal
    * @param {number|Amount} [options.rewardsRate=0] Rewards rate expressed as a decimal (e.g., 0.015 = 1.5%)
    */
   constructor({ apr = 0, rewardsRate = 0 } = {}) {
-    this._apr = apr instanceof Amount ? apr : new Amount(apr);
-    this._rewardsRate = rewardsRate instanceof Amount ? rewardsRate : new Amount(rewardsRate);
+    this.#apr = apr instanceof Amount ? apr : new Amount(apr);
+    this.#rewardsRate = rewardsRate instanceof Amount ? rewardsRate : new Amount(rewardsRate);
     const zeroAmount = new Amount(0);
 
-    if (this._apr.lessThan(zeroAmount)) {
+    if (this.#apr.lessThan(zeroAmount)) {
       throw new Error('APR must be zero or greater');
     }
-    if (this._rewardsRate.lessThan(zeroAmount)) {
+    if (this.#rewardsRate.lessThan(zeroAmount)) {
       throw new Error('Rewards rate must be zero or greater');
     }
 
-    this._dailyRate = this._apr.divideBy(new Amount(financialCalendar.daysInYear));
+    this._dailyRate = this.#apr.divideBy(new Amount(financialCalendar.daysInYear));
   }
 
   /**
@@ -42,7 +44,7 @@ class Account {
     }
     const amount = purchaseAmount instanceof Amount ? purchaseAmount : new Amount(purchaseAmount);
 
-    return amount.multiplyBy(this._rewardsRate);
+    return amount.multiplyBy(this.#rewardsRate);
   }
 
   /**
