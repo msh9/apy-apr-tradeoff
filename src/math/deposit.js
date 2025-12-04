@@ -31,13 +31,9 @@ class Account {
   constructor(openingBalance = 0, apy = 0) {
     this.#balance = new Amount(openingBalance);
     this.#apy = new Amount(apy);
-    // We do the following calculation once and acknowledge here that it is likely only accurate to ~15 places
-    // because we're using JS' number representation to perform it. See MDN for more information,
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number#number_encoding
-    // Ultimately, we have to determine the 365th root somehow in order to go from a APY to a daily rate (
-    // assuming daily componding.)
 
-    this.#dailyRate = new Amount(Math.pow(1 + apy, 1 / financialCalendar.daysInYear) - 1);
+    const one = new Amount(1);
+    this.#dailyRate = one.addTo(this.#apy).nthRoot(financialCalendar.daysInYear).subtractFrom(one);
   }
 
   /**
