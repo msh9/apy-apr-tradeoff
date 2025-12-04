@@ -131,6 +131,55 @@ class Amount {
   }
 
   /**
+   * Returns the nth root of this Amount using fixed precision integer arithmetic.
+   * @param {number} exponent The root to take, must be a positive integer
+   * @returns {Amount}
+   */
+  nthRoot(exponent) {
+    if (!Number.isInteger(exponent) || exponent <= 0) {
+      throw new Error('Exponent must be a positive integer');
+    }
+
+    if (this.#integerValue < 0n) {
+      throw new Error('Cannot take nthRoot of a negative amount');
+    }
+
+    if (exponent === 1) {
+      return this;
+    }
+
+    if (this.#integerValue === 0n) {
+      return new Amount(0);
+    }
+
+    const target = this;
+    const bigIntExponent = BigInt(exponent);
+    let low = 0n;
+    let high = this.#integerValue > SCALE ? this.#integerValue : SCALE;
+    let best = 0n;
+
+    while (low <= high) {
+      const mid = (low + high) / 2n;
+      const testSquare = mid ** bigIntExponent;
+
+      if (testSquare === target.#integerValue) {
+        return Amount.#_fromAmountInteger(mid);
+      }
+
+      if (testSquare < this.#integerValue) {
+        best = mid;
+        low = mid + 1n;
+      } else if (mid === 0n) {
+        break;
+      } else {
+        high = mid - 1n;
+      }
+    }
+
+    return Amount.#_fromAmountInteger(best);
+  }
+
+  /**
    * Raises this amount to a non-negative integer power using repeated multiplication.
    * @param {number} exponent The exponent to apply, must be a whole number >= 0
    * @returns {Amount}

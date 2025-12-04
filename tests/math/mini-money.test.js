@@ -63,6 +63,60 @@ describe('mini-money Amount', () => {
     });
   });
 
+  describe('nthRoot', () => {
+    it('calculates square roots within precision', () => {
+      const amount = new Amount(4);
+
+      const result = amount.nthRoot(2);
+
+      expect(result.toPreciseString()).toBe('2.00000000000000000000');
+    });
+
+    it('handles roots of fractional values', () => {
+      const amount = new Amount(0.25);
+
+      const result = amount.nthRoot(2);
+
+      expect(result.toPreciseString()).toBe('0.50000000000000000000');
+    });
+
+    it('returns zero for zero input', () => {
+      const amount = new Amount(0);
+
+      const result = amount.nthRoot(5);
+
+      expect(result.toPreciseString()).toBe('0.00000000000000000000');
+    });
+
+    it('approximates higher order roots', () => {
+      const amount = new Amount(8);
+
+      const result = amount.nthRoot(3);
+
+      expect(result.toDecimal()).toBeCloseTo(2, 10);
+      expect(result.pow(3).toDecimal()).toBeCloseTo(8, 10);
+    });
+
+    it('rejects non-positive exponents', () => {
+      const amount = new Amount(4);
+
+      expect(() => amount.nthRoot(0)).toThrow(/positive integer/);
+      expect(() => amount.nthRoot(-2)).toThrow(/positive integer/);
+    });
+
+    it('rejects non-integer exponents', () => {
+      const amount = new Amount(4);
+
+      expect(() => amount.nthRoot(1.5)).toThrow(/positive integer/);
+    });
+
+    it('rejects negative amounts', () => {
+      const amount = new Amount(-4);
+
+      expect(() => amount.nthRoot(2)).toThrow(/negative/);
+    });
+  });
+
   describe('addTo', () => {
     it('adds values that already share the same precision', () => {
       const lhs = new Amount(12.34);
