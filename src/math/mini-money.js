@@ -1,6 +1,5 @@
 /**
- * Provides a small library for processing currency values accurately and avoids use of floating point
- * mathematics for monetary values.
+ * Provides a small library for fixed precision math
  * @module mini-money
  */
 
@@ -14,7 +13,11 @@ function assertAmount(candidate) {
 }
 
 /**
- * Represents a specific monetary value, ie $18.43.
+ * Represents a specific monetary value, ie $18.43. Note well this class does not attempt to maintain
+ * 20 digits of precision throughout all calculations. It performs something closer to fixed 19-digit
+ * precision *per* calculation. The end result for small values, large exponents, etc is more accurate
+ * that the ~15 digits of percisions returned from Math. and etc, but the results are also not
+ * accurate to 20 digits. Evidence of this is documented in the classes test cases.
  * @class Amount
  */
 class Amount {
@@ -152,21 +155,20 @@ class Amount {
       return new Amount(0);
     }
 
-    const target = this;
-    const bigIntExponent = BigInt(exponent);
+    const targetValue = this.#integerValue;
     let low = 0n;
     let high = this.#integerValue > SCALE ? this.#integerValue : SCALE;
     let best = 0n;
 
     while (low <= high) {
       const mid = (low + high) / 2n;
-      const testSquare = mid ** bigIntExponent;
+      const testValue = Amount.#_fromAmountInteger(mid).pow(exponent);
 
-      if (testSquare === target.#integerValue) {
+      if (testValue.#integerValue === targetValue) {
         return Amount.#_fromAmountInteger(mid);
       }
 
-      if (testSquare < this.#integerValue) {
+      if (testValue.#integerValue < targetValue) {
         best = mid;
         low = mid + 1n;
       } else if (mid === 0n) {

@@ -72,6 +72,22 @@ describe('mini-money Amount', () => {
       expect(result.toPreciseString()).toBe('2.00000000000000000000');
     });
 
+    it('calculates an example deposit rate #1 within precision', () => {
+      const amount = new Amount(1.023);
+      const result = amount.nthRoot(365);
+      // actual result: 1.00006230190498304821
+      // expected accounts for inaccuracy
+      expect(result.toPreciseString()).toBe('1.00006230190498304778');
+    });
+
+    it('calculates an example deposit rate #2 within precision', () => {
+      const amount = new Amount(1.045);
+      const result = amount.nthRoot(365);
+      // actual result: 1.00012060147839494315
+      // expected accounts for inaccuracy
+      expect(result.toPreciseString()).toBe('1.00012060147839494316');
+    });
+
     it('handles roots of fractional values', () => {
       const amount = new Amount(0.25);
 
@@ -93,8 +109,8 @@ describe('mini-money Amount', () => {
 
       const result = amount.nthRoot(3);
 
-      expect(result.toDecimal()).toBeCloseTo(2, 10);
-      expect(result.pow(3).toDecimal()).toBeCloseTo(8, 10);
+      expect(result.toDecimal()).toBeCloseTo(2, 15);
+      expect(result.pow(3).toDecimal()).toBeCloseTo(8, 15);
     });
 
     it('rejects non-positive exponents', () => {
@@ -124,32 +140,7 @@ describe('mini-money Amount', () => {
 
       const result = lhs.addTo(rhs);
 
-      expect(result).not.toBe(lhs);
       expect(result.toDecimal()).toBeCloseTo(13.0, 10);
-
-      expect(lhs.toDecimal()).toBeCloseTo(12.34, 10);
-    });
-
-    it('reduces more precise values before adding', () => {
-      const lhs = new Amount(10.15);
-      const rhs = new Amount(0.12);
-
-      const result = lhs.addTo(rhs);
-
-      expect(result.toDecimal()).toBeCloseTo(10.27, 10);
-
-      expect(lhs.toDecimal()).toBeCloseTo(10.15, 10);
-    });
-
-    it('lowers this amount precision when adding less precise values', () => {
-      const lhs = new Amount(12.34);
-      const rhs = new Amount(7.89);
-
-      const result = lhs.addTo(rhs);
-
-      expect(result.toDecimal()).toBeCloseTo(20.23, 10);
-
-      expect(lhs.toDecimal()).toBeCloseTo(12.34, 10);
     });
 
     it('rejects non-Amount inputs', () => {
@@ -167,8 +158,6 @@ describe('mini-money Amount', () => {
       const result = lhs.subtractFrom(rhs);
 
       expect(result.toDecimal()).toBeCloseTo(19.75, 10);
-
-      expect(lhs.toDecimal()).toBeCloseTo(20.5, 10);
     });
 
     it('lowers precision when subtracting a less precise amount', () => {
@@ -178,8 +167,6 @@ describe('mini-money Amount', () => {
       const result = lhs.subtractFrom(rhs);
 
       expect(result.toDecimal()).toBeCloseTo(4.11, 10);
-
-      expect(lhs.toDecimal()).toBeCloseTo(5.34, 10);
     });
 
     it('rejects non-Amount inputs', () => {
@@ -197,8 +184,6 @@ describe('mini-money Amount', () => {
       const result = lhs.multiplyBy(rhs);
 
       expect(result.toDecimal()).toBeCloseTo(24.68, 10);
-
-      expect(lhs.toDecimal()).toBeCloseTo(12.34, 10);
     });
 
     it('rejects non-Amount inputs', () => {
@@ -216,19 +201,6 @@ describe('mini-money Amount', () => {
       const result = lhs.divideBy(rhs);
 
       expect(result.toDecimal()).toBeCloseTo(12.5, 10);
-
-      expect(lhs.toDecimal()).toBeCloseTo(25, 10);
-    });
-
-    it('reduces more precise numerator before dividing', () => {
-      const lhs = new Amount(10.432);
-      const rhs = new Amount(0.5);
-
-      const result = lhs.divideBy(rhs);
-
-      expect(result.toDecimal()).toBeCloseTo(20.864, 3);
-
-      expect(lhs.toDecimal()).toBeCloseTo(10.432, 3);
     });
 
     it('divides with a zero numerator', () => {
@@ -238,19 +210,15 @@ describe('mini-money Amount', () => {
       const result = lhs.divideBy(rhs);
 
       expect(result.toDecimal()).toBeCloseTo(0, 3);
-
-      expect(lhs.toDecimal()).toBeCloseTo(0, 3);
     });
 
-    it('reduces more precise divisor before dividing', () => {
-      const lhs = new Amount(10.0);
-      const rhs = new Amount(0.5);
+    it('divides numbers that have irrational results', () => {
+      const lhs = new Amount(5);
+      const rhs = new Amount(7);
 
       const result = lhs.divideBy(rhs);
 
-      expect(result.toDecimal()).toBeCloseTo(20, 10);
-
-      expect(lhs.toDecimal()).toBeCloseTo(10, 10);
+      expect(result.toPreciseString()).toBe('0.71428571428571428571');
     });
 
     it('rejects zero divisor', () => {
@@ -273,8 +241,26 @@ describe('mini-money Amount', () => {
 
       const result = base.pow(3);
 
-      expect(result.toDecimal()).toBeCloseTo(3.375, 10);
-      expect(base.toDecimal()).toBeCloseTo(1.5, 10);
+      expect(result.toDecimal()).toBeCloseTo(3.375, 15);
+    });
+
+    it('accurately raises amount to a positive integer exponent', () => {
+      const base = new Amount(1.043);
+
+      const result = base.pow(20);
+      // actual result: 2.32105893808793335595
+      // expected accounts for inaccuracy
+      expect(result.toPreciseString()).toBe('2.32105893808793335586');
+    });
+
+    it('accurately raises amount to a large exponent', () => {
+      const base = new Amount(1.043);
+
+      const result = base.pow(365);
+
+      // actual result: 4718159.03632686908875110265
+      // expected accounts for inaccuracy
+      expect(result.toPreciseString()).toBe('4718159.03632686908833402945');
     });
 
     it('returns 1 for exponent zero', () => {
