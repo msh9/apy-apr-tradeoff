@@ -153,4 +153,37 @@ describe('TradeoffComparison', () => {
       expect(scenario.creditCardInterest.toDecimal()).toBeCloseTo(expectedInterest, 8);
     });
   });
+
+  describe('simulateScenario real world mode', () => {
+    it('uses calendar day spans with month-end posting before payments', () => {
+      const calculator = new TradeoffComparison();
+      const scenario = calculator.simulateScenario({
+        principal: 1000,
+        periodCount: 1,
+        loanRate: 0,
+        depositApy: 0.1,
+        mode: 'real',
+        startDate: '2024-01-15',
+      });
+
+      const dailyRate = Math.pow(1 + 0.1, 1 / financialCalendar.daysInYear) - 1;
+      const expectedPosted = 1000 * dailyRate * 17; // Jan 15 through Jan 31 posted before Feb 15 payment
+      const expectedNet = 1000 + expectedPosted - scenario.loanAccount.payment().toDecimal();
+      expect(scenario.net.toDecimal()).toBeCloseTo(expectedNet, 6);
+    });
+
+    it('throws when real mode is selected without a start date', () => {
+      const calculator = new TradeoffComparison();
+
+      expect(() =>
+        calculator.simulateScenario({
+          principal: 100,
+          periodCount: 1,
+          loanRate: 0.01,
+          depositApy: 0.01,
+          mode: 'real',
+        }),
+      ).toThrow(/startDate/i);
+    });
+  });
 });
