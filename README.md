@@ -23,7 +23,9 @@ The calculator exposes a few different convenience functions with similar option
 We handle these scenarios and other via two different methodologies.
 
 1. Idealized world which assumes every month is 31 days (note well: that means a 372 day year...), monthly loans have payments due at the end of the 31-day month, and deposit account interest is deposited also at the end of the 31-day month. Furthermore, the deposit account daily accrual rate is calculated as 1/365 of the APY.
-2. [**Not implemented**] Real world which requires that the end user provide a starting date for calculations. With a starting date the calculator then figures the actual number of days/weeks/months etc for loan and deposit accounts. In this mode accruals are treated more realistically where deposit account interest is deposited in the account at the end of the month instead of whenever the loan payment occurs. Additionally loan  payments are made on their due date instead of always at the end of the month. Note well that this might result in a different net-benefit/cost value from #1 and might even change the result from net-benefit to net-cost. Credit Card interest remains simplified, using a 31-day month statement period. 
+2. Real world which requires that the end user provide a starting date for calculations. With a starting date the calculator figures the actual number of days for each period, schedules loan payments on their true monthly due dates, accrues deposit interest daily, and only credits that interest at the end of each calendar month. Credit Card interest remains simplified, using a 31-day month statement period. Note well that this might result in a different net-benefit/cost value from #1 and might even change the result from net-benefit to net-cost.
+
+The web component exposes a mode toggle to switch between the idealized and real-world calendars and requires a start date when using the real-world schedule.
 
 ## Cautions / Usage / Other notes
 
