@@ -3,8 +3,8 @@
  * @module tradeoff
  */
 
-import { financialCalendar } from './constants.js';
 import { addMonthsPreserveDay, daysBetween, normalizeDate } from './calendar.js';
+import { financialCalendar } from './constants.js';
 import { Account as CreditCardAccount } from './credit-card.js';
 import { Account as DepositAccount } from './deposit.js';
 import { Account as LoanAccount } from './loan.js';

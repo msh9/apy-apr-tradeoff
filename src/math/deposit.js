@@ -10,8 +10,8 @@
  * @module deposit
  */
 
-import { financialCalendar } from './constants.js';
 import { addDays, isSameDay, lastDayOfMonth, normalizeDate } from './calendar.js';
+import { financialCalendar } from './constants.js';
 import { Amount } from './mini-money.js';
 
 /**

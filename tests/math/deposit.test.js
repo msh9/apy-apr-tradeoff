@@ -114,7 +114,9 @@ describe('deposit Account', () => {
       const account = new Account(500, 0.02);
 
       expect(() => account.accrueForDaysWithMonthlyPosting(5, 'not-a-date')).toThrow(/date/i);
-      expect(() => account.accrueForDaysWithMonthlyPosting(-1, '2024-01-01')).toThrow(/zero or greater/i);
+      expect(() => account.accrueForDaysWithMonthlyPosting(-1, '2024-01-01')).toThrow(
+        /zero or greater/i,
+      );
     });
   });
 });
