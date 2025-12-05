@@ -21,11 +21,6 @@ function parseDateInput(input) {
 
   if (typeof input === 'string') {
     const trimmed = input.trim();
-    const isoOnlyDate = /^\d{4}-\d{2}-\d{2}$/;
-    if (isoOnlyDate.test(trimmed)) {
-      const [year, month, day] = trimmed.split('-').map((part) => Number.parseInt(part, 10));
-      return new Date(Date.UTC(year, month - 1, day));
-    }
 
     const parsed = new Date(trimmed);
     if (Number.isNaN(parsed.getTime())) {
