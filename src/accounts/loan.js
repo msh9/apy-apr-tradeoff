@@ -3,17 +3,11 @@
  * @module loan
  */
 
-import { financialCalendar } from './constants.js';
-import { Amount } from './mini-money.js';
+import { financialCalendar } from '../math/constants.js';
+import { Amount } from '../math/mini-money.js';
 
 const MONTHS_PER_YEAR = financialCalendar.monthsInYear;
 const MONTHS_PER_YEAR_AMOUNT = new Amount(MONTHS_PER_YEAR);
-
-function roundDownToCents(value) {
-  const decimalValue = value instanceof Amount ? value.toDecimal() : value;
-  const floored = Math.floor(decimalValue * 100) / 100;
-  return new Amount(floored);
-}
 
 /**
  * Loan account represents fixed term simple interest installment loans, complete with functions to introspect
@@ -91,15 +85,7 @@ class Account {
       return fixedZero;
     }
 
-    const flooredInterest = roundDownToCents(rawInterestAmount);
-    const fractionalPenny = rawInterestAmount.toDecimal() - flooredInterest.toDecimal();
-
-    // Preserve "borrower-friendly" rounding unless nearly a full penny would be lost.
-    if (fractionalPenny >= 0.0095) {
-      return rawInterestAmount;
-    }
-
-    return flooredInterest;
+    return rawInterestAmount.addTo(new Amount(0), { roundingMode: 'bankers', decimalPlaces: 2 });
   }
 
   #getPaymentAmount() {
@@ -119,7 +105,7 @@ class Account {
     if (this.#periodicRate.equals(fixedZero)) {
       // Zero interest loans round down to the nearest cent for every payment, favoring the borrower.
       const basePayment = this.principal.divideBy(new Amount(this.periodCount));
-      return roundDownToCents(basePayment);
+      return basePayment.divideBy(new Amount(1), { roundingMode: 'bankers', decimalPlaces: 2 });
     }
 
     const ratePlusOne = this.#periodicRate.addTo(new Amount(1));
@@ -127,7 +113,7 @@ class Account {
     const numerator = this.principal.multiplyBy(this.#periodicRate).multiplyBy(growthFactor);
     const denominator = growthFactor.subtractFrom(new Amount(1));
 
-    return numerator.divideBy(denominator);
+    return numerator.divideBy(denominator, { roundingMode: 'bankers', decimalPlaces: 2 });
   }
 }
 

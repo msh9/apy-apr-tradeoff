@@ -1,6 +1,6 @@
 import { LitElement, css, html } from 'lit';
 
-import { TradeoffComparison } from '../math/tradeoff.js';
+import { TradeoffComparison } from '../tradeoff.js';
 
 const currencyFormatter = (value, currency = 'USD') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);

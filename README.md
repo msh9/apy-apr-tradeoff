@@ -29,6 +29,6 @@ The web component exposes a mode toggle to switch between the idealized and real
 
 ## Cautions / Usage / Other notes
 
-The underlying library can be used as part of simpler term-loan and credit card interest calculators. The library, for the fun of it, uses an internally implement fixed percision arthimatic class. This is implemented in the 'mini-money.js' file.
+The underlying library can be used as part of simpler term-loan and credit card interest calculators. The library, for the fun of it, uses an internally implemented arthimatic class based on decimal.js for handling monetary and related calculations. This is implemented in the 'mini-money.js' file.
 
-I do _not_ recommend separately uses the Amount class for general purpose precision arthimatic. While it is precise enough for the usage here and in many cases more precise that JS' general number builtin object, it does not offer specific precision guarantees, instead only performing each calculation with a specific number of digits.
+I do _not_ recommend separately using the Amount class. While it does support some of the needed rounding semantics and it is not well used and is more of a utility class for use within this little example calculator than a full-fledged implementation.

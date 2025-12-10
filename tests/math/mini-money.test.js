@@ -75,9 +75,7 @@ describe('mini-money Amount', () => {
     it('calculates an example deposit rate #1 within precision', () => {
       const amount = new Amount(1.023);
       const result = amount.nthRoot(365);
-      // actual result: 1.00006230190498304821
-      // expected accounts for inaccuracy
-      expect(result.toPreciseString()).toBe('1.00006230190498304778');
+      expect(result.toPreciseString()).toBe('1.00006230190498304821');
     });
 
     it('calculates an example deposit rate #2 within precision', () => {
@@ -248,9 +246,7 @@ describe('mini-money Amount', () => {
       const base = new Amount(1.043);
 
       const result = base.pow(20);
-      // actual result: 2.32105893808793335595
-      // expected accounts for inaccuracy
-      expect(result.toPreciseString()).toBe('2.32105893808793335586');
+      expect(result.toPreciseString()).toBe('2.32105893808793335595');
     });
 
     it('accurately raises amount to a large exponent', () => {
@@ -258,9 +254,7 @@ describe('mini-money Amount', () => {
 
       const result = base.pow(365);
 
-      // actual result: 4718159.03632686908875110265
-      // expected accounts for inaccuracy
-      expect(result.toPreciseString()).toBe('4718159.03632686908833402945');
+      expect(result.toPreciseString()).toBe('4718159.03632686908875110265');
     });
 
     it('returns 1 for exponent zero', () => {
@@ -327,6 +321,50 @@ describe('mini-money Amount', () => {
       const lhs = new Amount(1);
 
       expect(() => lhs.lessThan(0)).toThrow(/Amount/);
+    });
+  });
+
+  describe('rounding', () => {
+    it('defaults to no rounding when options are omitted', () => {
+      const amount = new Amount(1.005);
+
+      const result = amount.addTo(new Amount(0));
+
+      expect(result.toPreciseString()).toBe('1.00500000000000000000');
+    });
+
+    it('supports bankers rounding', () => {
+      const amount = new Amount(1.005);
+
+      const result = amount.addTo(new Amount(0), { roundingMode: 'bankers', decimalPlaces: 2 });
+
+      expect(result.toPreciseString()).toBe('1.00000000000000000000');
+    });
+
+    it('supports conventional rounding', () => {
+      const amount = new Amount(1.005);
+
+      const result = amount.addTo(new Amount(0), {
+        roundingMode: 'conventional',
+        decimalPlaces: 2,
+      });
+
+      expect(result.toPreciseString()).toBe('1.01000000000000000000');
+    });
+
+    it('defaults decimalPlaces to cents when rounding is requested', () => {
+      const numerator = new Amount(10);
+      const denominator = new Amount(4);
+
+      const result = numerator.divideBy(denominator, { roundingMode: 'bankers' });
+
+      expect(result.toPreciseString()).toBe('2.50000000000000000000');
+    });
+
+    it('rejects unknown rounding modes', () => {
+      const amount = new Amount(1);
+
+      expect(() => amount.addTo(new Amount(1), { roundingMode: 'weird' })).toThrow(/roundingMode/);
     });
   });
 });

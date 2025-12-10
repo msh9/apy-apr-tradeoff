@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { TradeoffComparison } from '../../src/math/tradeoff.js';
+import { TradeoffComparison } from '../../src/tradeoff.js';
 import '../../src/ui/tradeoff-widget.ui.js';
 
 const renderWidget = async () => {

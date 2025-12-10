@@ -3,11 +3,11 @@
  * @module tradeoff
  */
 
-import { addMonthsPreserveDay, daysBetween, normalizeDate } from './calendar.js';
-import { financialCalendar } from './constants.js';
-import { Account as CreditCardAccount } from './credit-card.js';
-import { Account as DepositAccount } from './deposit.js';
-import { Account as LoanAccount } from './loan.js';
+import { Account as CreditCardAccount } from './accounts/credit-card.js';
+import { Account as DepositAccount } from './accounts/deposit.js';
+import { Account as LoanAccount } from './accounts/loan.js';
+import { addMonthsPreserveDay, daysBetween, normalizeDate } from './math/calendar.js';
+import { financialCalendar } from './math/constants.js';
 
 /**
  * TradeoffComparison coordinates scenarios where a borrower keeps cash invested while paying a loan.
@@ -81,10 +81,10 @@ class TradeoffComparison {
     const daysPerPeriod = Number.isInteger(this.periodDays)
       ? this.periodDays
       : financialCalendar.daysInMonth;
-    const paymentValue = loanAccount.payment().toDecimal();
+    const paymentAmount = loanAccount.payment();
     for (let i = 0; i < periodCount; i += 1) {
       depositAccount.accrueForDays(daysPerPeriod);
-      depositAccount.withdraw(paymentValue);
+      depositAccount.withdraw(paymentAmount);
     }
 
     return depositAccount.balance;
@@ -96,7 +96,7 @@ class TradeoffComparison {
     }
 
     const anchorDate = normalizeDate(startDate);
-    const paymentValue = loanAccount.payment().toDecimal();
+    const paymentAmount = loanAccount.payment();
     const schedule = this.#buildPaymentSchedule(anchorDate, periodCount);
 
     let accrualStart = anchorDate;
@@ -106,7 +106,7 @@ class TradeoffComparison {
         throw new Error('Payment schedule produced an invalid date ordering');
       }
       depositAccount.accrueForDaysWithMonthlyPosting(daysUntilDue, accrualStart);
-      depositAccount.withdraw(paymentValue);
+      depositAccount.withdraw(paymentAmount);
       accrualStart = dueDate;
     }
 

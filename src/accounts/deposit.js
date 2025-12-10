@@ -10,9 +10,9 @@
  * @module deposit
  */
 
-import { addDays, isSameDay, lastDayOfMonth, normalizeDate } from './calendar.js';
-import { financialCalendar } from './constants.js';
-import { Amount } from './mini-money.js';
+import { addDays, isSameDay, lastDayOfMonth, normalizeDate } from '../math/calendar.js';
+import { financialCalendar } from '../math/constants.js';
+import { Amount } from '../math/mini-money.js';
 
 /**
  * Provides functions for interacting with a deposit account on a periodic basis.
@@ -101,10 +101,17 @@ class Account {
     if (days === 0) {
       return this;
     }
-
+    let accruingBalance = new Amount(0);
     for (let i = 0; i < days; i++) {
-      this.#balance = this.#balance.addTo(this.#balance.multiplyBy(this.#dailyRate));
+      accruingBalance = accruingBalance.addTo(
+        this.#balance.addTo(accruingBalance).multiplyBy(this.#dailyRate),
+      );
     }
+
+    this.#balance = this.#balance.addTo(accruingBalance, {
+      roundingMode: 'bankers',
+      decimalPlaces: 2,
+    });
 
     return this;
   }
@@ -141,7 +148,11 @@ class Account {
       this.#pendingInterest = this.#pendingInterest.addTo(dailyInterest);
 
       if (monthEndCheck(currentDate)) {
-        this.#balance = this.#balance.addTo(this.#pendingInterest);
+        const postedInterest = this.#pendingInterest.addTo(new Amount(0), {
+          roundingMode: 'bankers',
+          decimalPlaces: 2,
+        });
+        this.#balance = this.#balance.addTo(postedInterest);
         this.#pendingInterest = new Amount(0);
       }
 

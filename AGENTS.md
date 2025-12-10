@@ -17,14 +17,23 @@ The web component should be built with `lit` tooling, include reasonable light/d
 - `npm install` — install dependencies; rerun whenever package manifests change.
 - `npm run dev` — start the lightweight Vite server for hot-reload verification of Alpine components.
 - `npm run build` — emit the minified bundle into `dist/` for deployment; fails if type errors or ESLint issues persist.
+- `npm run lint` and `npm run lint:fix` -- run the project's code linters and linters in fix mode respectively.
 - `npm run test` — execute unit tests via Vitest
+
+Both `npm run lint` and `npm run test` should be used to validate changes.
 
 ## Coding Style & Naming Conventions
 
 - Use ES modules, 2-space indentation, and single quotes for strings unless template literals add clarity.
-- Pure helpers live in `loan-math.js` with named exports; DOM-manipulating files end with `.ui.js` to signal side effects.
+- DOM-manipulating files and web components end with `.ui.js` in the file name
+- Files and code for model various account types are in the `src/accounts` folder
+- Arthimatic and related functionality are in the `src/math` folder
 - Run `npm run lint` (ESLint + Prettier) before opening a pull request; config enforces no implicit globals and browser-safe APIs only.
-- As needed and when appropriate write javascript appropriate for accurately handling monetary amounts. This means full precision calculations, rounding only when displaying final results. It also means avoiding floating point math where possible including using approaches that convert all numbers to integers and performing integer math.
+
+## Rounding and precision
+
+- The project uses a javascript decimal number representation to help maintain precision when performing calculations on monetary amounts. In the general the project should maintain \*_20 digits_ of precision when performing monetary calculations.
+- The project uses "bankers rounding" When amounts must be rounded to 'usable' monetary amounts, ie values with only to digits after the decimal. Bankers rounding is described succinctly here: https://www.personalinvesting.jpmorgan.com/bankers-rounding. We need usable monetary amounts for accrual interest posting, loan payment schedule amount, credit card rewards amounts, and for display in the results UI.
 
 ## Testing Guidelines
 

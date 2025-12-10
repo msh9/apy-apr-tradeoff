@@ -3,8 +3,8 @@
  * @module credit-card
  */
 
-import { financialCalendar } from './constants.js';
-import { Amount } from './mini-money.js';
+import { financialCalendar } from '../math/constants.js';
+import { Amount } from '../math/mini-money.js';
 
 /**
  * Represents a simplified credit card account for calculating rewards and periodic interest accrual.
@@ -44,7 +44,7 @@ class Account {
     }
     const amount = new Amount(purchaseAmount);
 
-    return amount.multiplyBy(this.#rewardsRate);
+    return amount.multiplyBy(this.#rewardsRate, { roundingMode: 'bankers', decimalPlaces: 2 });
   }
 
   /**
@@ -73,7 +73,9 @@ class Account {
       accruedBalance = accruedBalance.addTo(accruedBalance.multiplyBy(this._dailyRate));
     }
 
-    return accruedBalance.subtractFrom(startingBalance);
+    const accruedInterest = accruedBalance.subtractFrom(startingBalance);
+
+    return accruedInterest.addTo(new Amount(0), { roundingMode: 'bankers', decimalPlaces: 2 });
   }
 }
 
