@@ -3,6 +3,7 @@
  * @module tradeoff
  */
 
+import { addMonthsPreserveDay, daysBetween, normalizeDate } from './calendar.js';
 import { financialCalendar } from './constants.js';
 import { Account as CreditCardAccount } from './credit-card.js';
 import { Account as DepositAccount } from './deposit.js';
@@ -42,23 +43,29 @@ class TradeoffComparison {
     depositApy,
     ccRewardsRate = 0,
     ccRate = 0,
+    mode = 'idealized',
+    startDate,
   }) {
+    const normalizedMode = typeof mode === 'string' ? mode.toLowerCase() : 'idealized';
+    const useRealMode = normalizedMode === 'real' || normalizedMode === 'real-world';
+
     const loanAccount = new LoanAccount(periodCount, 'MONTH', loanRate, principal);
     const depositAccount = new DepositAccount(principal, depositApy);
     const creditCardAccount = new CreditCardAccount({ apr: ccRate, rewardsRate: ccRewardsRate });
-    const paymentValue = loanAccount.payment().toDecimal();
     const creditCardRewards = creditCardAccount.calculateRewards(principal);
     const periodDays = Number.isInteger(this.periodDays)
       ? this.periodDays
       : financialCalendar.daysInMonth;
     const creditCardInterest = creditCardAccount.interestForDays(principal, periodDays);
 
-    for (let i = 0; i < periodCount; i++) {
-      depositAccount.accrueForDays(this.periodDays);
-      depositAccount.withdraw(paymentValue);
-    }
-
-    const net = depositAccount.balance;
+    const resultNet = useRealMode
+      ? this.#simulateRealWorld({
+          depositAccount,
+          loanAccount,
+          periodCount,
+          startDate,
+        })
+      : this.#simulateIdealized({ depositAccount, loanAccount, periodCount });
 
     return {
       loanAccount,
@@ -66,8 +73,52 @@ class TradeoffComparison {
       creditCardAccount,
       creditCardRewards,
       creditCardInterest,
-      net,
+      net: resultNet,
     };
+  }
+
+  #simulateIdealized({ depositAccount, loanAccount, periodCount }) {
+    const daysPerPeriod = Number.isInteger(this.periodDays)
+      ? this.periodDays
+      : financialCalendar.daysInMonth;
+    const paymentValue = loanAccount.payment().toDecimal();
+    for (let i = 0; i < periodCount; i += 1) {
+      depositAccount.accrueForDays(daysPerPeriod);
+      depositAccount.withdraw(paymentValue);
+    }
+
+    return depositAccount.balance;
+  }
+
+  #simulateRealWorld({ depositAccount, loanAccount, periodCount, startDate }) {
+    if (!startDate) {
+      throw new Error('startDate is required for real world mode');
+    }
+
+    const anchorDate = normalizeDate(startDate);
+    const paymentValue = loanAccount.payment().toDecimal();
+    const schedule = this.#buildPaymentSchedule(anchorDate, periodCount);
+
+    let accrualStart = anchorDate;
+    for (const dueDate of schedule) {
+      const daysUntilDue = daysBetween(accrualStart, dueDate);
+      if (daysUntilDue < 0) {
+        throw new Error('Payment schedule produced an invalid date ordering');
+      }
+      depositAccount.accrueForDaysWithMonthlyPosting(daysUntilDue, accrualStart);
+      depositAccount.withdraw(paymentValue);
+      accrualStart = dueDate;
+    }
+
+    return depositAccount.balance;
+  }
+
+  #buildPaymentSchedule(startDate, periodCount) {
+    const schedule = [];
+    for (let i = 1; i <= periodCount; i += 1) {
+      schedule.push(addMonthsPreserveDay(startDate, i));
+    }
+    return schedule;
   }
 }
 

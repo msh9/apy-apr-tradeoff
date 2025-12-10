@@ -14,6 +14,8 @@ class TradeoffWidget extends LitElement {
     ccRateInput: { state: true },
     principalInput: { state: true },
     termMonthsInput: { state: true },
+    startDateInput: { state: true },
+    modeInput: { state: true },
     errorMessage: { state: true },
     resultText: { state: true },
     ccRewardsText: { state: true },
@@ -30,6 +32,8 @@ class TradeoffWidget extends LitElement {
     this.ccRateInput = '';
     this.principalInput = '';
     this.termMonthsInput = '';
+    this.startDateInput = '';
+    this.modeInput = 'idealized';
     this.errorMessage = '';
     this.resultText = 'dollars gained or lost';
     this.ccRewardsText = 'dollars';
@@ -75,6 +79,27 @@ class TradeoffWidget extends LitElement {
           <div class="pill">Loan vs APY Widget</div>
         </div>
         <form @submit=${this._onSubmit} novalidate>
+          <div class="field">
+            <label for="mode">Calendar mode</label>
+            <select id="mode" name="mode" .value=${this.modeInput} @input=${this._onInput}>
+              <option value="idealized">Idealized (31-day months)</option>
+              <option value="real">Real world calendar</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="startDate">Start date</label>
+            <input
+              id="startDate"
+              name="startDate"
+              type="date"
+              placeholder="Starting date for schedule"
+              .value=${this.startDateInput}
+              @input=${this._onInput}
+              ?required=${this.modeInput === 'real'}
+            />
+          </div>
+
           <div class="field">
             <label for="principal">Purchase amount</label>
             <input
@@ -216,6 +241,9 @@ class TradeoffWidget extends LitElement {
   }
 
   _calculateIfReady() {
+    const modeValue = (this.modeInput || 'idealized').toLowerCase();
+    const useRealMode = modeValue === 'real' || modeValue === 'real-world';
+
     const principal = this._parseMoney(this.principalInput);
     if (principal === null) {
       this._clearResult();
@@ -278,6 +306,15 @@ class TradeoffWidget extends LitElement {
       }
     }
 
+    let startDate = undefined;
+    if (useRealMode) {
+      startDate = this._parseDate(this.startDateInput);
+      if (startDate === null) {
+        this._clearResult();
+        return;
+      }
+    }
+
     const loanRate = ratePercent === null ? 0 : ratePercent / 100;
     const depositApy = apyPercent / 100;
     const ccRewardsRate = ccRewardsPercent === null ? 0 : ccRewardsPercent / 100;
@@ -290,6 +327,8 @@ class TradeoffWidget extends LitElement {
       depositApy,
       ccRewardsRate,
       ccRate,
+      mode: modeValue,
+      startDate,
     });
 
     const netValue = scenario?.net?.toDecimal ? scenario.net.toDecimal() : Number.NaN;
@@ -312,6 +351,8 @@ class TradeoffWidget extends LitElement {
       depositApy,
       ccRewardsRate,
       ccRate,
+      mode: modeValue,
+      startDate,
       netValue,
       creditCardRewards: ccRewardsValue,
       creditCardInterest: ccInterestValue,
@@ -401,6 +442,27 @@ class TradeoffWidget extends LitElement {
     return parsed;
   }
 
+  _parseDate(value) {
+    if (!value) {
+      this._setError('Select a start date for real world mode.');
+      return null;
+    }
+
+    const normalized = String(value).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+      this._setError('Enter a valid calendar date (YYYY-MM-DD).');
+      return null;
+    }
+
+    const parsed = new Date(normalized);
+    if (Number.isNaN(parsed.getTime())) {
+      this._setError('Enter a valid calendar date (YYYY-MM-DD).');
+      return null;
+    }
+
+    return normalized;
+  }
+
   _formatCurrency(amount) {
     try {
       return currencyFormatter(amount, this.currency);
@@ -457,6 +519,7 @@ class TradeoffWidget extends LitElement {
     }
 
     input,
+    select,
     output {
       background: transparent;
       border: 1px solid var(--tradeoff-input-border, #7c858f);
@@ -479,7 +542,8 @@ class TradeoffWidget extends LitElement {
       align-items: center;
     }
 
-    input:focus {
+    input:focus,
+    select:focus {
       outline: 2px solid var(--tradeoff-accent, #1e9afd);
       box-shadow: 0 0 0 2px rgba(30, 154, 253, 0.2);
     }
@@ -516,6 +580,7 @@ class TradeoffWidget extends LitElement {
       }
 
       input,
+      select,
       output {
         color: var(--tradeoff-text-light, #0d1a26);
       }

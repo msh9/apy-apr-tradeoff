@@ -1,8 +1,8 @@
 # APY APR Tradeoffs
 
-This library provides a small calculator to demonstrate the issues discussed in this [blog post](https://codinginthetrenches.com/2025/10/15/does-that-0-pay-over-time-loan-make-sense/). The library is structured in two parts. (1) a small module library that provides a couple functions for calculating the trade off between the cost of a loan over time plus yield from a held asset versus paying all at once using a rewards credit or similar. (2) An optional web component that provides form fields for a user to enter data and get numeric results from the library in (1).
+This library provides a small calculator to demonstrate the issues discussed in this [blog post](https://codinginthetrenches.com/2025/10/15/does-that-0-pay-over-time-loan-make-sense/). The library is structured in two parts. (1) a small library that provides a couple functions for calculating the trade off between the cost of a loan over time plus yield from a held asset versus paying all at once using a rewards credit or similar. (2) An optional web component that provides form fields for a user to enter data and get numeric results from the library in (1).
 
-While the blog post's focus is on 0% APR loans combined with high yield saving accounts versus rewards credits cards, the library can also be used for loans with greater than 0% APRs, cash discounts, and purchase fees.
+While the blog post's focus is on 0% APR loans combined with high yield saving accounts versus rewards credits cards, the library can also be used for loans with greater than 0% APRs.
 
 ## Assumptions
 
@@ -11,7 +11,7 @@ The calculator does make some simplifying assumptions. Namely,
 1. Loans use monthly periods
 2. Loans are simple (ie not compounded) and fixed term
 3. Deposit accounts accrue and compound interest daily based on a 365 day year
-4. A buyer using a credit card or loan will pay the same purchase price, _unless_ there is an explicit credit card fee that increases the effective purchase price when using a credit card
+4. A buyer using a credit card or loan will pay the same purchase price
 
 ## Usages and inputs
 
@@ -23,6 +23,12 @@ The calculator exposes a few different convenience functions with similar option
 We handle these scenarios and other via two different methodologies.
 
 1. Idealized world which assumes every month is 31 days (note well: that means a 372 day year...), monthly loans have payments due at the end of the 31-day month, and deposit account interest is deposited also at the end of the 31-day month. Furthermore, the deposit account daily accrual rate is calculated as 1/365 of the APY.
-2. [**Not implemented**] Real world which requires that the end user provide a starting date for calculations. With a starting date the calculator then figures the actual number of days/weeks/months etc for loan and deposit accounts.
+2. Real world which requires that the end user provide a starting date for calculations. With a starting date the calculator figures the actual number of days for each period, schedules loan payments on their true monthly due dates, accrues deposit interest daily, and only credits that interest at the end of each calendar month. Credit Card interest remains simplified, using a 31-day month statement period. Note well that this might result in a different net-benefit/cost value from #1 and might even change the result from net-benefit to net-cost.
 
-Underneath the aforementioned convenience functions, we expose functions for calculating interest, deposit account accruals, and related data.
+The web component exposes a mode toggle to switch between the idealized and real-world calendars and requires a start date when using the real-world schedule.
+
+## Cautions / Usage / Other notes
+
+The underlying library can be used as part of simpler term-loan and credit card interest calculators. The library, for the fun of it, uses an internally implement fixed percision arthimatic class. This is implemented in the 'mini-money.js' file.
+
+I do _not_ recommend separately uses the Amount class for general purpose precision arthimatic. While it is precise enough for the usage here and in many cases more precise that JS' general number builtin object, it does not offer specific precision guarantees, instead only performing each calculation with a specific number of digits.

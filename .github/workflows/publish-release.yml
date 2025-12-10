@@ -39,7 +39,7 @@ jobs:
 
       - name: Create release archive
         run: zip -r "apr-apy-widget.zip" dist
-      
+
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'

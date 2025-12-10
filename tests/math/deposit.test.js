@@ -96,4 +96,27 @@ describe('deposit Account', () => {
       expect(() => account.accrueForDays(-3)).toThrow(/days/i);
     });
   });
+
+  describe('accrueForDaysWithMonthlyPosting', () => {
+    it('defers interest until month end and leaves mid-month balances unchanged', () => {
+      const account = new Account(1000, 0.1);
+
+      account.accrueForDaysWithMonthlyPosting(10, '2024-01-05');
+      expect(account.balance.toDecimal()).toBeCloseTo(1000, 6);
+
+      account.accrueForDaysWithMonthlyPosting(17, '2024-01-15');
+      const dailyRate = (1 + 0.1) ** (1 / 365) - 1;
+      const expectedPosted = 1000 * dailyRate * 27; // Jan 5 through Jan 31
+      expect(account.balance.toDecimal()).toBeCloseTo(1000 + expectedPosted, 6);
+    });
+
+    it('throws on invalid start dates and negative spans', () => {
+      const account = new Account(500, 0.02);
+
+      expect(() => account.accrueForDaysWithMonthlyPosting(5, 'not-a-date')).toThrow(/date/i);
+      expect(() => account.accrueForDaysWithMonthlyPosting(-1, '2024-01-01')).toThrow(
+        /zero or greater/i,
+      );
+    });
+  });
 });

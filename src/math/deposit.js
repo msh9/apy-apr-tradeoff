@@ -10,6 +10,7 @@
  * @module deposit
  */
 
+import { addDays, isSameDay, lastDayOfMonth, normalizeDate } from './calendar.js';
 import { financialCalendar } from './constants.js';
 import { Amount } from './mini-money.js';
 
@@ -21,6 +22,7 @@ class Account {
   #apy;
   #balance;
   #dailyRate;
+  #pendingInterest;
   /**
    * "Opens" an account with a opening balance and the percentage yield to be used for subsequent calculations.
    *  Values may be specified as numbers of as Amounts. Values provided as JS numbers will be converted to Amounts
@@ -31,6 +33,7 @@ class Account {
   constructor(openingBalance = 0, apy = 0) {
     this.#balance = new Amount(openingBalance);
     this.#apy = new Amount(apy);
+    this.#pendingInterest = new Amount(0);
 
     const one = new Amount(1);
     this.#dailyRate = one.addTo(this.#apy).nthRoot(financialCalendar.daysInYear).subtractFrom(one);
@@ -101,6 +104,48 @@ class Account {
 
     for (let i = 0; i < days; i++) {
       this.#balance = this.#balance.addTo(this.#balance.multiplyBy(this.#dailyRate));
+    }
+
+    return this;
+  }
+
+  /**
+   * Accrues interest over a span of days while only crediting interest at the end of each calendar month.
+   * This mirrors common consumer deposit behavior where daily interest is not immediately available.
+   * @param {number} days Number of days to accrue over
+   * @param {Date|string|number} startDate Starting calendar date used to find month boundaries
+   * @param {object} [options]
+   * @param {function} [options.isMonthEnd] Optional predicate receiving a Date to determine month-end
+   * @returns {Account} This account updated by the accrual
+   */
+  accrueForDaysWithMonthlyPosting(days, startDate, { isMonthEnd } = {}) {
+    if (!Number.isInteger(days)) {
+      throw new Error('Days must be an integer number');
+    }
+    if (days < 0) {
+      throw new Error('Days must be zero or greater');
+    }
+    if (days === 0) {
+      return this;
+    }
+
+    const monthEndCheck =
+      typeof isMonthEnd === 'function'
+        ? isMonthEnd
+        : (date) => isSameDay(date, lastDayOfMonth(date));
+
+    let currentDate = normalizeDate(startDate);
+
+    for (let i = 0; i < days; i += 1) {
+      const dailyInterest = this.#balance.multiplyBy(this.#dailyRate);
+      this.#pendingInterest = this.#pendingInterest.addTo(dailyInterest);
+
+      if (monthEndCheck(currentDate)) {
+        this.#balance = this.#balance.addTo(this.#pendingInterest);
+        this.#pendingInterest = new Amount(0);
+      }
+
+      currentDate = addDays(currentDate, 1);
     }
 
     return this;

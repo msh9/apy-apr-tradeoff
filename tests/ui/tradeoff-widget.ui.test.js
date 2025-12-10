@@ -232,4 +232,52 @@ describe('tradeoff-widget', () => {
     await element.updateComplete;
     expect(simulateSpy).toHaveBeenCalledTimes(2);
   });
+
+  it('requires a start date when real world mode is selected', async () => {
+    const simulateSpy = vi.spyOn(TradeoffComparison.prototype, 'simulateScenario');
+    const element = await renderWidget();
+    const shadow = element.shadowRoot;
+
+    shadow.querySelector('input[name="principal"]').value = '400';
+    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
+    shadow.querySelector('input[name="termMonths"]').value = '4';
+    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
+    shadow.querySelector('input[name="apy"]').value = '3';
+    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
+    await element.updateComplete;
+
+    const callsBeforeModeToggle = simulateSpy.mock.calls.length;
+    shadow.querySelector('select[name="mode"]').value = 'real';
+    shadow.querySelector('select[name="mode"]').dispatchEvent(new Event('input'));
+    await element.updateComplete;
+
+    expect(simulateSpy).toHaveBeenCalledTimes(callsBeforeModeToggle);
+    expect(shadow.querySelector('[data-role="error"]').textContent).toMatch(/start date/i);
+  });
+
+  it('passes mode and start date into simulation when provided', async () => {
+    const simulateSpy = vi.spyOn(TradeoffComparison.prototype, 'simulateScenario').mockReturnValue({
+      net: { toDecimal: () => 5 },
+      creditCardRewards: { toDecimal: () => 0 },
+      creditCardInterest: { toDecimal: () => 0 },
+    });
+    const element = await renderWidget();
+    const shadow = element.shadowRoot;
+
+    shadow.querySelector('input[name="principal"]').value = '500';
+    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
+    shadow.querySelector('input[name="termMonths"]').value = '3';
+    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
+    shadow.querySelector('input[name="apy"]').value = '4';
+    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
+    shadow.querySelector('select[name="mode"]').value = 'real';
+    shadow.querySelector('select[name="mode"]').dispatchEvent(new Event('input'));
+    shadow.querySelector('input[name="startDate"]').value = '2024-01-10';
+    shadow.querySelector('input[name="startDate"]').dispatchEvent(new Event('input'));
+    await element.updateComplete;
+
+    const lastCallArgs = simulateSpy.mock.calls.at(-1)[0];
+    expect(lastCallArgs.mode).toBe('real');
+    expect(lastCallArgs.startDate).toBe('2024-01-10');
+  });
 });
