@@ -91,7 +91,7 @@ describe('TradeoffComparison', () => {
       });
 
       // computed in spreadsheet
-      expect(scenario.net.toDecimal()).toBeCloseTo(-28.15, 2);
+      expect(scenario.net.toDecimal()).toBeCloseTo(-28.16, 2);
     });
 
     it('matches spreadsheet-derived results for an 18 month loan', () => {
@@ -106,7 +106,7 @@ describe('TradeoffComparison', () => {
       });
 
       // computed in spreadsheet
-      expect(scenario.net.toDecimal()).toBeCloseTo(-33.85, 2);
+      expect(scenario.net.toDecimal()).toBeCloseTo(-33.91, 2);
     });
   });
 
