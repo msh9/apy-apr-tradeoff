@@ -3,8 +3,8 @@
  * @module credit-card
  */
 
-import { financialCalendar } from './constants.js';
-import { Amount } from './mini-money.js';
+import { financialCalendar } from '../math/constants.js';
+import { Amount } from '../math/mini-money.js';
 
 /**
  * Represents a simplified credit card account for calculating rewards and periodic interest accrual.

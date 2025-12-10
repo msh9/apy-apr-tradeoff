@@ -3,11 +3,11 @@
  * @module tradeoff
  */
 
-import { addMonthsPreserveDay, daysBetween, normalizeDate } from './calendar.js';
-import { financialCalendar } from './constants.js';
-import { Account as CreditCardAccount } from './credit-card.js';
-import { Account as DepositAccount } from './deposit.js';
-import { Account as LoanAccount } from './loan.js';
+import { Account as CreditCardAccount } from './accounts/credit-card.js';
+import { Account as DepositAccount } from './accounts/deposit.js';
+import { Account as LoanAccount } from './accounts/loan.js';
+import { addMonthsPreserveDay, daysBetween, normalizeDate } from './math/calendar.js';
+import { financialCalendar } from './math/constants.js';
 
 /**
  * TradeoffComparison coordinates scenarios where a borrower keeps cash invested while paying a loan.

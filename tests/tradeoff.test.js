@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { financialCalendar } from '../../src/math/constants.js';
-import { TradeoffComparison } from '../../src/math/tradeoff.js';
+import { financialCalendar } from '../src/math/constants.js';
+import { TradeoffComparison } from '../src/tradeoff.js';
 
 describe('TradeoffComparison', () => {
   describe('simulateScenario savings behavior', () => {

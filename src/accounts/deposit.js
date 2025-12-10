@@ -10,9 +10,9 @@
  * @module deposit
  */
 
-import { addDays, isSameDay, lastDayOfMonth, normalizeDate } from './calendar.js';
-import { financialCalendar } from './constants.js';
-import { Amount } from './mini-money.js';
+import { addDays, isSameDay, lastDayOfMonth, normalizeDate } from '../math/calendar.js';
+import { financialCalendar } from '../math/constants.js';
+import { Amount } from '../math/mini-money.js';
 
 /**
  * Provides functions for interacting with a deposit account on a periodic basis.

@@ -3,8 +3,8 @@
  * @module loan
  */
 
-import { financialCalendar } from './constants.js';
-import { Amount } from './mini-money.js';
+import { financialCalendar } from '../math/constants.js';
+import { Amount } from '../math/mini-money.js';
 
 const MONTHS_PER_YEAR = financialCalendar.monthsInYear;
 const MONTHS_PER_YEAR_AMOUNT = new Amount(MONTHS_PER_YEAR);

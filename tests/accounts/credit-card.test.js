@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { Account as CreditCardAccount } from '../../src/accounts/credit-card.js';
 import { financialCalendar } from '../../src/math/constants.js';
-import { Account as CreditCardAccount } from '../../src/math/credit-card.js';
 
 describe('CreditCardAccount', () => {
   it('calculates rewards on a purchase using the rewards rate', () => {

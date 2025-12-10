@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { Account } from '../../src/math/deposit.js';
+import { Account } from '../../src/accounts/deposit.js';
 import { Amount } from '../../src/math/mini-money.js';
 
 describe('deposit Account', () => {
