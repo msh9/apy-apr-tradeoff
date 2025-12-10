@@ -101,10 +101,17 @@ class Account {
     if (days === 0) {
       return this;
     }
-
+    let accruingBalance = new Amount(0);
     for (let i = 0; i < days; i++) {
-      this.#balance = this.#balance.addTo(this.#balance.multiplyBy(this.#dailyRate));
+      accruingBalance = accruingBalance.addTo(
+        this.#balance.addTo(accruingBalance).multiplyBy(this.#dailyRate),
+      );
     }
+
+    this.#balance = this.#balance.addTo(accruingBalance, {
+      roundingMode: 'bankers',
+      decimalPlaces: 2,
+    });
 
     return this;
   }

@@ -75,7 +75,7 @@ describe('deposit Account', () => {
       account.accrueForDays(30);
 
       const expectedBalance = 1000 * (1 + 0.05) ** (30 / 365);
-      expect(account.balance.toDecimal()).toBeCloseTo(expectedBalance, 6);
+      expect(account.balance.toDecimal()).toBeCloseTo(expectedBalance, 2);
     });
 
     it('rejects non-integer day counts', () => {
