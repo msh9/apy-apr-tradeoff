@@ -1,10 +1,17 @@
+import DecimalImpl from 'decimal.js';
+
 /**
- * Provides a small library for fixed precision math
  * @module mini-money
  */
 
 const FIXED_PRECISION = 20;
-const SCALE = 10n ** BigInt(FIXED_PRECISION);
+const ROUNDING_MODES = {
+  bankers: DecimalImpl.ROUND_HALF_EVEN,
+  conventional: DecimalImpl.ROUND_HALF_UP,
+  none: null,
+};
+
+DecimalImpl.set({ precision: 40 });
 
 function assertAmount(candidate) {
   if (!(candidate instanceof Amount)) {
@@ -12,111 +19,151 @@ function assertAmount(candidate) {
   }
 }
 
+function normalizeRoundingOptions(options = {}) {
+  const { roundingMode = 'none', decimalPlaces } = options;
+
+  if (!Object.prototype.hasOwnProperty.call(ROUNDING_MODES, roundingMode)) {
+    throw new Error('roundingMode must be one of bankers, conventional, or none');
+  }
+
+  if (decimalPlaces !== undefined && (!Number.isInteger(decimalPlaces) || decimalPlaces < 0)) {
+    throw new Error('decimalPlaces must be a non-negative integer when provided');
+  }
+
+  return {
+    roundingMode,
+    decimalPlaces: decimalPlaces ?? (roundingMode === 'none' ? undefined : 2),
+  };
+}
+
+function applyOptionalRounding(decimalValue, options) {
+  const { roundingMode, decimalPlaces } = normalizeRoundingOptions(options);
+  if (roundingMode === 'none') {
+    return decimalValue;
+  }
+
+  return decimalValue.toDecimalPlaces(decimalPlaces, ROUNDING_MODES[roundingMode]);
+}
+
 /**
- * Represents a specific monetary value, ie $18.43. Note well this class does not attempt to maintain
- * 20 digits of precision throughout all calculations. It performs something closer to fixed 19-digit
- * precision *per* calculation. The end result for small values, large exponents, etc is more accurate
- * that the ~15 digits of percisions returned from Math. and etc, but the results are also not
- * accurate to 20 digits. Evidence of this is documented in the classes test cases.
+ * Represents a specific monetary value, ie $18.43. Backed by decimal.js to provide higher precision
+ * and optional rounding strategies for monetary values.
  * @class Amount
  */
 class Amount {
-  #integerValue;
+  #decimalValue;
 
   /**
-   * Note well, that this constructor is not currently precise
-   * to 20 digits. It is closer to 15 digits total due to converting the input number into a large
-   * integer prior to precise handling. I deemed this 'fine' since the intended usage is for calcuations
-   * on user entered montary amounts which typically only have 2 or 3 digits after the decimal place.
-   * @param {number} value The monetary value to represent
+   * @param {number|string|Amount|DecimalImpl} value The monetary value to represent
    */
   constructor(value) {
-    if (Number.isNaN(value) || !Number.isFinite(value)) {
-      throw new Error('Value must be a finite number');
+    if (value instanceof Amount) {
+      this.#decimalValue = value.#decimalValue;
+      return;
     }
 
-    this.#integerValue = BigInt(Math.trunc(value * 10 ** FIXED_PRECISION));
+    if (value instanceof DecimalImpl) {
+      this.#decimalValue = value;
+      return;
+    }
+
+    if (typeof value === 'string' || typeof value === 'number') {
+      if (Number.isNaN(Number(value)) || !Number.isFinite(Number(value))) {
+        throw new Error('Value must be a finite number');
+      }
+
+      this.#decimalValue = new DecimalImpl(value);
+      return;
+    }
+
+    throw new Error('Value must be a number, string, Amount, or Decimal');
   }
 
-  static #_fromAmountInteger(integer) {
+  static #fromDecimal(decimalValue, roundingOptions) {
+    const roundedValue = applyOptionalRounding(decimalValue, roundingOptions);
     const amount = new Amount(0);
-    amount.#integerValue = integer;
+    amount.#decimalValue = roundedValue;
     return amount;
   }
 
   /**
-   * adds an amount to this amount, adding an amount of greater precision with first reduce that amounts
-   * precision, adding an amount of lower precision to this amount will lower the resulting amount's precision.
+   * adds an amount to this amount
    * @method addTo
    * @param {Amount} augend The other amount to add to this amount, returning a new Amount
+   * @param {object} [options]
+   * @param {'bankers'|'conventional'|'none'} [options.roundingMode] Optional rounding strategy
+   * @param {number} [options.decimalPlaces] Decimal places to round to when rounding is requested
    * @returns {Amount}
    */
-  addTo(augend) {
+  addTo(augend, options) {
     assertAmount(augend);
 
-    const resultValue = this.#integerValue + augend.#integerValue;
+    const resultValue = this.#decimalValue.add(augend.#decimalValue);
 
-    return Amount.#_fromAmountInteger(resultValue);
+    return Amount.#fromDecimal(resultValue, options);
   }
 
   /**
-   * removes an amount from this amount, removing an amount of greater precision will first reduce that amounts
-   * precision, removing an amount of lower precision from this amount will lower the resulting amount's precision.
+   * removes an amount from this amount
    * @method subtractFrom
    * @param {Amount} subtrahend The other amount to subtract from this amount, returning a new Amount
+   * @param {object} [options]
+   * @param {'bankers'|'conventional'|'none'} [options.roundingMode] Optional rounding strategy
+   * @param {number} [options.decimalPlaces] Decimal places to round to when rounding is requested
    * @returns {Amount}
    */
-  subtractFrom(subtrahend) {
+  subtractFrom(subtrahend, options) {
     assertAmount(subtrahend);
 
-    const resultValue = this.#integerValue - subtrahend.#integerValue;
+    const resultValue = this.#decimalValue.sub(subtrahend.#decimalValue);
 
-    return Amount.#_fromAmountInteger(resultValue);
+    return Amount.#fromDecimal(resultValue, options);
   }
 
   /**
-   * multiplies this amount by the other amount, an amount of greater precision will first be reduced to this amount's
-   * precision, an amount of lower precision from this amount will lower the resulting amount's precision.
+   * multiplies this amount by the other amount
    * @method multiplyBy
    * @param {Amount} multiplicand The other amount to multiply by this amount, returning a new Amount
+   * @param {object} [options]
+   * @param {'bankers'|'conventional'|'none'} [options.roundingMode] Optional rounding strategy
+   * @param {number} [options.decimalPlaces] Decimal places to round to when rounding is requested
    * @returns {Amount}
    */
-  multiplyBy(multiplicand) {
+  multiplyBy(multiplicand, options) {
     assertAmount(multiplicand);
 
-    const product = this.#integerValue * multiplicand.#integerValue;
-    const resultValue = product / SCALE;
+    const product = this.#decimalValue.mul(multiplicand.#decimalValue);
 
-    return Amount.#_fromAmountInteger(resultValue);
+    return Amount.#fromDecimal(product, options);
   }
 
   /**
-   * divides this amount by the other amount, an amount of greater precision will first be reduced to this amount's
-   * precision, an amount of lower precision from this amount will lower the resulting amount's precision.
+   * divides this amount by the other amount
    * @method divideBy
    * @param {Amount} divisor The other amount to divide this amount by, returning a new Amount
+   * @param {object} [options]
+   * @param {'bankers'|'conventional'|'none'} [options.roundingMode] Optional rounding strategy
+   * @param {number} [options.decimalPlaces] Decimal places to round to when rounding is requested
    * @returns {Amount}
    */
-  divideBy(divisor) {
+  divideBy(divisor, options) {
     assertAmount(divisor);
 
-    if (divisor.#integerValue === 0n) {
+    if (divisor.#decimalValue.isZero()) {
       throw new Error('Cannot divide by zero');
     }
 
-    const numerator = this.#integerValue * SCALE;
-    const resultValue = numerator / divisor.#integerValue;
+    const quotient = this.#decimalValue.div(divisor.#decimalValue);
 
-    return Amount.#_fromAmountInteger(resultValue);
+    return Amount.#fromDecimal(quotient, options);
   }
 
   /**
-   * Lossy conversion to a decimal number. Likes the constructor, this is not precise to 20 digits and instead closer
-   * to 14 or 15.
+   * Lossy conversion to a decimal number. Limited to JS number precision.
    * @returns {number}
    */
   toDecimal() {
-    return Number(this.#integerValue) / Number(SCALE);
+    return this.#decimalValue.toNumber();
   }
 
   /**
@@ -124,26 +171,23 @@ class Amount {
    * @returns {string}
    */
   toPreciseString() {
-    const isNegative = this.#integerValue < 0n;
-    const absoluteValue = isNegative ? -this.#integerValue : this.#integerValue;
-    const padded = absoluteValue.toString().padStart(FIXED_PRECISION + 1, '0');
-    const wholePortion = padded.slice(0, -FIXED_PRECISION) || '0';
-    const fractionalPortion = padded.slice(-FIXED_PRECISION);
-
-    return `${isNegative ? '-' : ''}${wholePortion}.${fractionalPortion}`;
+    return this.#decimalValue.toFixed(FIXED_PRECISION);
   }
 
   /**
-   * Returns the nth root of this Amount using fixed precision integer arithmetic.
+   * Returns the nth root of this Amount using decimal arithmetic.
    * @param {number} exponent The root to take, must be a positive integer
+   * @param {object} [options]
+   * @param {'bankers'|'conventional'|'none'} [options.roundingMode] Optional rounding strategy
+   * @param {number} [options.decimalPlaces] Decimal places to round to when rounding is requested
    * @returns {Amount}
    */
-  nthRoot(exponent) {
+  nthRoot(exponent, options) {
     if (!Number.isInteger(exponent) || exponent <= 0) {
       throw new Error('Exponent must be a positive integer');
     }
 
-    if (this.#integerValue < 0n) {
+    if (this.#decimalValue.isNegative()) {
       throw new Error('Cannot take nthRoot of a negative amount');
     }
 
@@ -151,42 +195,25 @@ class Amount {
       return this;
     }
 
-    if (this.#integerValue === 0n) {
+    if (this.#decimalValue.isZero()) {
       return new Amount(0);
     }
 
-    const targetValue = this.#integerValue;
-    let low = 0n;
-    let high = this.#integerValue > SCALE ? this.#integerValue : SCALE;
-    let best = 0n;
+    const exponentDecimal = new DecimalImpl(1).div(exponent);
+    const root = this.#decimalValue.pow(exponentDecimal);
 
-    while (low <= high) {
-      const mid = (low + high) / 2n;
-      const testValue = Amount.#_fromAmountInteger(mid).pow(exponent);
-
-      if (testValue.#integerValue === targetValue) {
-        return Amount.#_fromAmountInteger(mid);
-      }
-
-      if (testValue.#integerValue < targetValue) {
-        best = mid;
-        low = mid + 1n;
-      } else if (mid === 0n) {
-        break;
-      } else {
-        high = mid - 1n;
-      }
-    }
-
-    return Amount.#_fromAmountInteger(best);
+    return Amount.#fromDecimal(root, options);
   }
 
   /**
-   * Raises this amount to a non-negative integer power using repeated multiplication.
+   * Raises this amount to a non-negative integer power.
    * @param {number} exponent The exponent to apply, must be a whole number >= 0
+   * @param {object} [options]
+   * @param {'bankers'|'conventional'|'none'} [options.roundingMode] Optional rounding strategy
+   * @param {number} [options.decimalPlaces] Decimal places to round to when rounding is requested
    * @returns {Amount}
    */
-  pow(exponent) {
+  pow(exponent, options) {
     if (!Number.isInteger(exponent) || exponent < 0) {
       throw new Error('Exponent must be a non-negative integer');
     }
@@ -195,12 +222,9 @@ class Amount {
       return new Amount(1);
     }
 
-    let result = new Amount(1);
-    for (let i = 0; i < exponent; i += 1) {
-      result = result.multiplyBy(this);
-    }
+    const result = this.#decimalValue.pow(exponent);
 
-    return result;
+    return Amount.#fromDecimal(result, options);
   }
 
   /**
@@ -211,7 +235,7 @@ class Amount {
   equals(other) {
     assertAmount(other);
 
-    return this.#integerValue === other.#integerValue;
+    return this.#decimalValue.equals(other.#decimalValue);
   }
 
   /**
@@ -222,7 +246,7 @@ class Amount {
   lessThan(other) {
     assertAmount(other);
 
-    return this.#integerValue < other.#integerValue;
+    return this.#decimalValue.lessThan(other.#decimalValue);
   }
 }
 

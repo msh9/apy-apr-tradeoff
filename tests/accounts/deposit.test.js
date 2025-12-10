@@ -59,12 +59,6 @@ describe('deposit Account', () => {
       expect(account.balance.toDecimal()).toBeCloseTo(374.5, 10);
     });
 
-    it('rejects non-Amount-compatible inputs', () => {
-      const account = new Account(100);
-
-      expect(() => account.withdraw('12')).toThrow(/must be a finite number/i);
-    });
-
     it('allows overdrafts so long as the withdrawal is finite and non-negative', () => {
       const account = new Account(50);
 
