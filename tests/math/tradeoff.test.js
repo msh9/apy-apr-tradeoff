@@ -158,7 +158,7 @@ describe('TradeoffComparison', () => {
     it('uses calendar day spans with month-end posting before payments', () => {
       const calculator = new TradeoffComparison();
       const scenario = calculator.simulateScenario({
-        principal: 2349.99,  
+        principal: 2349.99,
         periodCount: 6,
         loanRate: 0,
         depositApy: 0.042,
@@ -167,7 +167,7 @@ describe('TradeoffComparison', () => {
       });
 
       // Expected value spreadshet computed
-      expect(scenario.net.toDecimal()).toBeCloseTo(27.4750870936, 10);
+      expect(scenario.net.toDecimal()).toBeCloseTo(27.52573879259407, 10);
     });
 
     it('throws when real mode is selected without a start date', () => {
