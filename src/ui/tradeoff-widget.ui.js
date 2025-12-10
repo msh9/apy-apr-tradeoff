@@ -70,37 +70,24 @@ class TradeoffWidget extends LitElement {
     const loanPaymentText = this._formatMaybeCurrency(metrics.loanPayment);
     const loanInterestText = this._formatMaybeCurrency(metrics.loanInterest);
     const savingsInterestText = this._formatMaybeCurrency(metrics.depositInterest);
-    const savingsBalanceText = this._formatMaybeCurrency(metrics.savingsEndBalance, {
-      fallback: '—',
-      sign: true,
-    });
     const loanSavingsCostText = this._formatMaybeCurrency(metrics.loanSavingsCost, {
       fallback: '—',
       sign: true,
     });
     const ccRewardsText = this._formatMaybeCurrency(metrics.cardRewards);
     const ccInterestText = this._formatMaybeCurrency(metrics.cardInterest);
-    const ccNetText = this._formatMaybeCurrency(metrics.cardNetCost, { fallback: '—', sign: true });
-
-    const ranking = this._buildCostRanking(metrics);
-    const recommended = ranking[0];
-    const headline = this._buildHeadline(recommended);
 
     return html`
       <article class="tradeoff-shell">
         <header class="intro">
           <p class="eyebrow">Loan, savings, credit card</p>
-          <h1>How should I pay for this purchase?</h1>
-          <p class="lede">
-            Compare paying cash, taking a loan and parking the cash in savings, or using your credit
-            card.
-          </p>
+          <h1>Comparing a loan, loan + savings account, and a credit card</h1>
         </header>
 
         <section class="solar-card global-card">
           <div class="field">
             <label for="principal">Purchase amount</label>
-            <p class="helper">Total price before tax (or include tax if you prefer).</p>
+            <p class="helper">Total price</p>
             <input
               id="principal"
               name="principal"
@@ -117,7 +104,10 @@ class TradeoffWidget extends LitElement {
 
           <div class="timing-row">
             <div class="field compact">
-              <label for="mode">Calendar mode</label>
+              <label for="mode">Calculation mode</label>
+              <p class="helper">
+                Real world is slightly more accurate when you know you loan start date
+              </p>
               <select id="mode" name="mode" .value=${this.modeInput} @input=${this._onInput}>
                 <option value="idealized">Idealized (31-day months)</option>
                 <option value="real">Real world calendar</option>
@@ -202,23 +192,19 @@ class TradeoffWidget extends LitElement {
           </article>
 
           <article class="option-card savings-card">
-            <div class="mobile-connector">
-              This section models what happens if you keep each loan payment in a savings account
-              until it’s due.
-            </div>
             <div class="pill-link">
               <span class="strategy-pill">Loan + Savings Strategy</span>
             </div>
             <div class="card-heading">
               <h2>Savings while you carry the loan</h2>
-              <p class="subtitle">Where your would-be loan payments sit and earn interest.</p>
+              <p class="subtitle">Where would-be loan payments sit and earn interest.</p>
             </div>
 
             <div class="field-group">
               <p class="group-label">Deposit Information</p>
               <div class="field">
                 <label for="apy">Savings or deposit APY</label>
-                <p class="helper">Where you’d keep the money that covers your loan payments.</p>
+                <p class="helper">APY on the account holding future payments.</p>
                 <input
                   id="apy"
                   name="apy"
@@ -238,14 +224,6 @@ class TradeoffWidget extends LitElement {
               <p>
                 <span class="label">Interest earned on parked payments:</span>
                 <span data-role="deposit-interest">${savingsInterestText}</span>
-              </p>
-              <p>
-                <span class="label">Final savings balance after last payment:</span>
-                <span data-role="savings-balance">${savingsBalanceText}</span>
-              </p>
-              <p>
-                <span class="label">Loan + savings net cost:</span>
-                <span data-role="loan-savings-cost">${loanSavingsCostText}</span>
               </p>
               ${Number.isFinite(metrics.loanInterest)
                 ? null
