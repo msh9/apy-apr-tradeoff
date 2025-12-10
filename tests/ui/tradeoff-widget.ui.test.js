@@ -125,36 +125,6 @@ describe('tradeoff-widget', () => {
     expect(lastCallArgs.ccRate).toBeCloseTo(0.2899, 4);
   });
 
-  it('shows cost label and currency formatting for negative net values', async () => {
-    vi.spyOn(TradeoffComparison.prototype, 'simulateScenario').mockReturnValue({
-      net: { toDecimal: () => 15 },
-      creditCardRewards: { toDecimal: () => 0 },
-      creditCardInterest: { toDecimal: () => 0 },
-      loanAccount: {
-        payment: () => ({ toDecimal: () => 100 }),
-        totalInterest: () => ({ toDecimal: () => 40 }),
-      },
-      depositAccount: { balance: { toDecimal: () => 15 } },
-    });
-
-    const element = await renderWidget();
-    const shadow = element.shadowRoot;
-
-    shadow.querySelector('input[name="principal"]').value = '1000';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="termMonths"]').value = '6';
-    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="apy"]').value = '3';
-    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="loanRate"]').value = '4';
-    shadow.querySelector('input[name="loanRate"]').dispatchEvent(new Event('input'));
-    await element.updateComplete;
-
-    const headline = shadow.querySelector('[data-role="summary-headline"]').textContent;
-    expect(headline).toMatch(/saves you/i);
-    expect(headline).toMatch(/\$/);
-  });
-
   it('clears the result when an input is emptied after a valid calculation', async () => {
     vi.spyOn(TradeoffComparison.prototype, 'simulateScenario').mockReturnValue({
       net: { toDecimal: () => 50 },

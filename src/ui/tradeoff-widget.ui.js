@@ -98,41 +98,22 @@ class TradeoffWidget extends LitElement {
         </header>
 
         <section class="solar-card global-card">
-          <form class="global-grid" @submit=${this._onSubmit} novalidate>
-            <div class="field">
-              <label for="principal">Purchase amount</label>
-              <p class="helper">Total price before tax (or include tax if you prefer).</p>
-              <input
-                id="principal"
-                name="principal"
-                type="number"
-                step="0.01"
-                inputmode="decimal"
-                min="0"
-                placeholder="e.g. 1200"
-                .value=${this.principalInput}
-                @input=${this._onInput}
-                required
-              />
-            </div>
-
-            <div class="field">
-              <label for="termMonths">How long will you take to pay? (months)</label>
-              <p class="helper">Used for loan, savings, and credit card comparisons.</p>
-              <input
-                id="termMonths"
-                name="termMonths"
-                type="number"
-                step="1"
-                inputmode="numeric"
-                min="1"
-                placeholder="e.g. 12"
-                .value=${this.termMonthsInput}
-                @input=${this._onInput}
-                required
-              />
-            </div>
-          </form>
+          <div class="field">
+            <label for="principal">Purchase amount</label>
+            <p class="helper">Total price before tax (or include tax if you prefer).</p>
+            <input
+              id="principal"
+              name="principal"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="e.g. 1200"
+              .value=${this.principalInput}
+              @input=${this._onInput}
+              required
+            />
+          </div>
 
           <div class="timing-row">
             <div class="field compact">
@@ -143,7 +124,10 @@ class TradeoffWidget extends LitElement {
               </select>
             </div>
 
-            <div class="field compact">
+            <div
+              style="display:${this.modeInput === 'real' ? html`inherited` : html`hidden`}"
+              class="field compact"
+            >
               <label for="startDate">Start date</label>
               <p class="helper">Needed only for the real-world calendar option.</p>
               <input
@@ -170,7 +154,7 @@ class TradeoffWidget extends LitElement {
             </div>
 
             <div class="field-group">
-              <p class="group-label">Basics</p>
+              <p class="group-label">Term Loan Information</p>
               <div class="field">
                 <label for="loanRate">Loan Nominal Annual Rate</label>
                 <p class="helper">Enter 0% for promotional offers.</p>
@@ -184,6 +168,23 @@ class TradeoffWidget extends LitElement {
                   placeholder="e.g. 5.5"
                   .value=${this.loanRateInput}
                   @input=${this._onInput}
+                />
+              </div>
+
+              <div class="field">
+                <label for="termMonths">How long will you take to pay? (months)</label>
+                <p class="helper">Used for loan payment calculations.</p>
+                <input
+                  id="termMonths"
+                  name="termMonths"
+                  type="number"
+                  step="1"
+                  inputmode="numeric"
+                  min="1"
+                  placeholder="e.g. 12"
+                  .value=${this.termMonthsInput}
+                  @input=${this._onInput}
+                  required
                 />
               </div>
             </div>
@@ -213,21 +214,24 @@ class TradeoffWidget extends LitElement {
               <p class="subtitle">Where your would-be loan payments sit and earn interest.</p>
             </div>
 
-            <div class="field">
-              <label for="apy">Savings or deposit APY</label>
-              <p class="helper">Where you’d keep the money that covers your loan payments.</p>
-              <input
-                id="apy"
-                name="apy"
-                type="number"
-                step="0.01"
-                inputmode="decimal"
-                min="0"
-                placeholder="e.g. 4.5"
-                .value=${this.apyInput}
-                @input=${this._onInput}
-                required
-              />
+            <div class="field-group">
+              <p class="group-label">Deposit Information</p>
+              <div class="field">
+                <label for="apy">Savings or deposit APY</label>
+                <p class="helper">Where you’d keep the money that covers your loan payments.</p>
+                <input
+                  id="apy"
+                  name="apy"
+                  type="number"
+                  step="0.01"
+                  inputmode="decimal"
+                  min="0"
+                  placeholder="e.g. 4.5"
+                  .value=${this.apyInput}
+                  @input=${this._onInput}
+                  required
+                />
+              </div>
             </div>
 
             <div class="mini-results">
@@ -263,7 +267,8 @@ class TradeoffWidget extends LitElement {
               <p class="subtitle">Use your credit card.</p>
             </div>
 
-            <div class="field-grid">
+            <div class="field-group">
+              <p class="group-label">Credit Card Information</p>
               <div class="field">
                 <label for="ccRate">Credit card APR</label>
                 <input
@@ -310,10 +315,16 @@ class TradeoffWidget extends LitElement {
 
         <section class="solar-card summary-card">
           <div class="bullets">
-            <p><span class="bullet-label">Loan + savings net benefit/cost:</span> ${loanSavingsCostText}</p>
+            <p>
+              <span class="bullet-label">Loan + savings net benefit/cost:</span>
+              ${loanSavingsCostText}
+            </p>
             <p><span class="bullet-label">Plain loan cost:</span> ${loanInterestText}</p>
             <p><span class="bullet-label">Credit reward:</span> ${ccRewardsText}</p>
-            <p><span class="bullet-label">One cycle credit card cost if not paid:</span> ${ccInterestText}></p>
+            <p>
+              <span class="bullet-label">One cycle credit card cost if not paid:</span>
+              ${ccInterestText}>
+            </p>
           </div>
         </section>
 
@@ -951,40 +962,6 @@ class TradeoffWidget extends LitElement {
       font-size: 18px;
       font-weight: 700;
       color: var(--base1);
-    }
-
-    .ranking {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: grid;
-      gap: 6px;
-    }
-
-    .ranking li {
-      display: grid;
-      grid-template-columns: auto 1fr auto auto;
-      align-items: center;
-      gap: 8px;
-      padding: 8px;
-      border: 1px solid var(--base01);
-      border-radius: 8px;
-    }
-
-    .ranking .rank {
-      font-weight: 700;
-      color: var(--base0);
-    }
-
-    .ranking .label {
-      color: var(--base1);
-      font-weight: 600;
-    }
-
-    .ranking .value {
-      color: var(--base1);
-      justify-self: end;
-      font-weight: 600;
     }
 
     .chip {
