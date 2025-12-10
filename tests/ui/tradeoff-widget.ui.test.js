@@ -21,9 +21,14 @@ describe('tradeoff-widget', () => {
 
   it('normalizes percent inputs and computes when all inputs are valid', async () => {
     const simulateSpy = vi.spyOn(TradeoffComparison.prototype, 'simulateScenario').mockReturnValue({
-      net: { toDecimal: () => 123.45 },
+      net: { toDecimal: () => 30 },
       creditCardRewards: { toDecimal: () => 10 },
       creditCardInterest: { toDecimal: () => 2.5 },
+      loanAccount: {
+        payment: () => ({ toDecimal: () => 200 }),
+        totalInterest: () => ({ toDecimal: () => 20 }),
+      },
+      depositAccount: { balance: { toDecimal: () => 30 } },
     });
 
     const element = await renderWidget();
@@ -54,9 +59,12 @@ describe('tradeoff-widget', () => {
       ccRate: 0.2899,
     });
 
-    expect(shadow.querySelector('[data-role="result"]').textContent).toMatch(/123\.45/);
+    expect(shadow.querySelector('[data-role="loan-payment"]').textContent).toMatch(/\$200/);
+    expect(shadow.querySelector('[data-role="loan-interest"]').textContent).toMatch(/\$20/);
+    expect(shadow.querySelector('[data-role="deposit-interest"]').textContent).toMatch(/\$50/);
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/\$10/);
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/\$2\.50/);
+    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/-\$/);
   });
 
   it('blocks calculation and surfaces an error when inputs are invalid', async () => {
@@ -83,11 +91,9 @@ describe('tradeoff-widget', () => {
 
     expect(simulateSpy).not.toHaveBeenCalled();
     expect(shadow.querySelector('[data-role="error"]').textContent).toBe('');
-    expect(shadow.querySelector('[data-role="result"]').textContent).toMatch(
-      /dollars gained or lost/,
-    );
-    expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/dollars/);
-    expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/dollars/);
+    expect(shadow.querySelector('[data-role="loan-payment"]').textContent).toBe('—');
+    expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toBe('—');
+    expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toBe('—');
   });
 
   it('defaults the credit card rate when left empty', async () => {
@@ -95,6 +101,11 @@ describe('tradeoff-widget', () => {
       net: { toDecimal: () => 0 },
       creditCardRewards: { toDecimal: () => 0 },
       creditCardInterest: { toDecimal: () => 0 },
+      loanAccount: {
+        payment: () => ({ toDecimal: () => 0 }),
+        totalInterest: () => ({ toDecimal: () => 0 }),
+      },
+      depositAccount: { balance: { toDecimal: () => 0 } },
     });
 
     const element = await renderWidget();
@@ -116,9 +127,14 @@ describe('tradeoff-widget', () => {
 
   it('shows cost label and currency formatting for negative net values', async () => {
     vi.spyOn(TradeoffComparison.prototype, 'simulateScenario').mockReturnValue({
-      net: { toDecimal: () => -99.99 },
+      net: { toDecimal: () => 15 },
       creditCardRewards: { toDecimal: () => 0 },
       creditCardInterest: { toDecimal: () => 0 },
+      loanAccount: {
+        payment: () => ({ toDecimal: () => 100 }),
+        totalInterest: () => ({ toDecimal: () => 40 }),
+      },
+      depositAccount: { balance: { toDecimal: () => 15 } },
     });
 
     const element = await renderWidget();
@@ -134,9 +150,9 @@ describe('tradeoff-widget', () => {
     shadow.querySelector('input[name="loanRate"]').dispatchEvent(new Event('input'));
     await element.updateComplete;
 
-    const resultText = shadow.querySelector('[data-role="result"]').textContent;
-    expect(resultText).toMatch(/Cost/i);
-    expect(resultText).toMatch(/\$99\.99/);
+    const headline = shadow.querySelector('[data-role="summary-headline"]').textContent;
+    expect(headline).toMatch(/saves you/i);
+    expect(headline).toMatch(/\$/);
   });
 
   it('clears the result when an input is emptied after a valid calculation', async () => {
@@ -144,6 +160,11 @@ describe('tradeoff-widget', () => {
       net: { toDecimal: () => 50 },
       creditCardRewards: { toDecimal: () => 5 },
       creditCardInterest: { toDecimal: () => 1.5 },
+      loanAccount: {
+        payment: () => ({ toDecimal: () => 100 }),
+        totalInterest: () => ({ toDecimal: () => 10 }),
+      },
+      depositAccount: { balance: { toDecimal: () => 50 } },
     });
     const element = await renderWidget();
     const shadow = element.shadowRoot;
@@ -155,7 +176,7 @@ describe('tradeoff-widget', () => {
     shadow.querySelector('input[name="apy"]').value = '3';
     shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
     await element.updateComplete;
-    expect(shadow.querySelector('[data-role="result"]').textContent).toMatch(/50/);
+    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/\$/);
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/\$/);
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/\$/);
 
@@ -163,9 +184,9 @@ describe('tradeoff-widget', () => {
     shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
     await element.updateComplete;
 
-    expect(shadow.querySelector('[data-role="result"]').textContent).toBe('dollars gained or lost');
-    expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/dollars/);
-    expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/dollars/);
+    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toBe('—');
+    expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toBe('—');
+    expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toBe('—');
   });
 
   it('applies positive-range constraints via input attributes', async () => {
@@ -185,6 +206,11 @@ describe('tradeoff-widget', () => {
       net: { toDecimal: () => 10 },
       creditCardRewards: { toDecimal: () => 3 },
       creditCardInterest: { toDecimal: () => 1 },
+      loanAccount: {
+        payment: () => ({ toDecimal: () => 50 }),
+        totalInterest: () => ({ toDecimal: () => 5 }),
+      },
+      depositAccount: { balance: { toDecimal: () => 10 } },
     });
     const element = await renderWidget();
     const shadow = element.shadowRoot;
@@ -199,13 +225,13 @@ describe('tradeoff-widget', () => {
 
     element.currency = 'EUR';
     await element.updateComplete;
-    expect(shadow.querySelector('[data-role="result"]').textContent).toMatch(/€/);
+    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/€/);
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/€/);
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/€/);
 
     element.currency = 'NOT-A-CODE';
     await element.updateComplete;
-    expect(shadow.querySelector('[data-role="result"]').textContent).toMatch(/\$/);
+    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/\$/);
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/\$/);
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/\$/);
   });
