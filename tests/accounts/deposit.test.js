@@ -101,7 +101,8 @@ describe('deposit Account', () => {
       account.accrueForDaysWithMonthlyPosting(17, '2024-01-15');
       const dailyRate = (1 + 0.1) ** (1 / 365) - 1;
       const expectedPosted = 1000 * dailyRate * 27; // Jan 5 through Jan 31
-      expect(account.balance.toDecimal()).toBeCloseTo(1000 + expectedPosted, 6);
+      expect(account.balance.toDecimal()).toBeCloseTo(1007.05, 2);
+      expect(account.balance.toDecimal()).toBeLessThanOrEqual(1000 + expectedPosted);
     });
 
     it('throws on invalid start dates and negative spans', () => {

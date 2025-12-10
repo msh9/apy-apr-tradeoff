@@ -141,7 +141,11 @@ class Account {
       this.#pendingInterest = this.#pendingInterest.addTo(dailyInterest);
 
       if (monthEndCheck(currentDate)) {
-        this.#balance = this.#balance.addTo(this.#pendingInterest);
+        const postedInterest = this.#pendingInterest.addTo(new Amount(0), {
+          roundingMode: 'bankers',
+          decimalPlaces: 2,
+        });
+        this.#balance = this.#balance.addTo(postedInterest);
         this.#pendingInterest = new Amount(0);
       }
 

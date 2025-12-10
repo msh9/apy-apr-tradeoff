@@ -44,7 +44,7 @@ class Account {
     }
     const amount = new Amount(purchaseAmount);
 
-    return amount.multiplyBy(this.#rewardsRate);
+    return amount.multiplyBy(this.#rewardsRate, { roundingMode: 'bankers', decimalPlaces: 2 });
   }
 
   /**
@@ -73,7 +73,9 @@ class Account {
       accruedBalance = accruedBalance.addTo(accruedBalance.multiplyBy(this._dailyRate));
     }
 
-    return accruedBalance.subtractFrom(startingBalance);
+    const accruedInterest = accruedBalance.subtractFrom(startingBalance);
+
+    return accruedInterest.addTo(new Amount(0), { roundingMode: 'bankers', decimalPlaces: 2 });
   }
 }
 

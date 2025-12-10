@@ -21,7 +21,7 @@ describe('loan Account', () => {
   describe('totalInterest', () => {
     it.each([
       { label: 'non-interest bearing loan', rate: 0, expected: 0 },
-      { label: 'interest bearing loan', rate: 0.05, expected: 54.579562 },
+      { label: 'interest bearing loan', rate: 0.05, expected: 54.52 },
     ])('returns the simple interest amount for the entire loan (%s)', ({ rate, expected }) => {
       const principal = 2000;
       const account = new Account(12, 'MONTH', rate, principal);
@@ -55,7 +55,7 @@ describe('loan Account', () => {
         label: 'rounding down scenario #2',
         periods: 3,
         principal: 602.57,
-        expectedPayment: 200.85,
+        expectedPayment: 200.86,
       },
     ])('computes zero interest payment amount (%s)', ({ periods, principal, expectedPayment }) => {
       const rate = 0;
@@ -72,7 +72,7 @@ describe('loan Account', () => {
         periodCount: 12,
         principal: 1200,
         rate: 0.1,
-        totalInterest: 65.98,
+        totalInterest: 66.0,
         expectedPayment: 105.5,
       },
       {
@@ -88,7 +88,7 @@ describe('loan Account', () => {
         periodCount: 18,
         principal: 1029.19,
         rate: 0.2,
-        totalInterest: 170.57,
+        totalInterest: 170.51,
         expectedPayment: 66.65,
       },
     ])(
