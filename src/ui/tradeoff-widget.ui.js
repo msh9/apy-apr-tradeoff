@@ -1,46 +1,52 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
 
 import { TradeoffComparison } from '../tradeoff.js';
+import './loan-card.ui.js';
+import './savings-card.ui.js';
+
+import { tradeoffWidgetStyles } from './tradeoff-widget.styles.js';
 
 const currencyFormatter = (value, currency = 'USD') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
 const DEFAULT_CC_RATE_PERCENT = 28.99;
+const EMPTY_METRICS = Object.freeze({
+  loanPayment: Number.NaN,
+  loanInterest: Number.NaN,
+  depositInterest: Number.NaN,
+  savingsEndBalance: Number.NaN,
+  loanSavingsCost: Number.NaN,
+  cardRewards: Number.NaN,
+  cardInterest: Number.NaN,
+  cardNetCost: Number.NaN,
+});
 
 class TradeoffWidget extends LitElement {
   static properties = {
-    loanRateInput: { state: true },
-    apyInput: { state: true },
-    ccRewardsRateInput: { state: true },
-    ccRateInput: { state: true },
     principalInput: { state: true },
-    termMonthsInput: { state: true },
-    customTermMonthsInput: { state: true },
-    useGlobalTerm: { state: true },
     startDateInput: { state: true },
     modeInput: { state: true },
     errorMessage: { state: true },
     metrics: { state: true },
+    ccRewardsRateInput: { state: true },
+    ccRateInput: { state: true },
     currency: { type: String },
     periodDays: { type: Number, attribute: 'period-days' },
   };
 
   constructor() {
     super();
-    this.loanRateInput = '';
-    this.apyInput = '';
-    this.ccRewardsRateInput = '';
-    this.ccRateInput = '';
     this.principalInput = '';
-    this.termMonthsInput = '';
-    this.customTermMonthsInput = '';
-    this.useGlobalTerm = true;
     this.startDateInput = '';
     this.modeInput = 'idealized';
     this.errorMessage = '';
     this.metrics = null;
+    this.ccRewardsRateInput = '';
+    this.ccRateInput = '';
     this._currency = 'USD';
     this.periodDays = undefined;
     this._calculator = new TradeoffComparison();
+    this._loanData = null;
+    this._depositData = null;
     this._lastNetValue = undefined;
     this._lastCcRewardsValue = undefined;
     this._lastCcInterestValue = undefined;
@@ -66,246 +72,12 @@ class TradeoffWidget extends LitElement {
   }
 
   render() {
-    const metrics = this.metrics || {};
-    const loanPaymentText = this._formatMaybeCurrency(metrics.loanPayment);
-    const loanInterestText = this._formatMaybeCurrency(metrics.loanInterest);
-    const savingsInterestText = this._formatMaybeCurrency(metrics.depositInterest);
-    const loanSavingsCostText = this._formatMaybeCurrency(metrics.loanSavingsCost, {
-      fallback: '—',
-      sign: true,
-    });
-    const ccRewardsText = this._formatMaybeCurrency(metrics.cardRewards);
-    const ccInterestText = this._formatMaybeCurrency(metrics.cardInterest);
+    const metrics = this.metrics || EMPTY_METRICS;
 
     return html`
       <article class="tradeoff-shell">
-        <header class="intro">
-          <p class="eyebrow">Loan, savings, credit card</p>
-          <h1>Comparing a loan, loan + savings account, and a credit card</h1>
-        </header>
-
-        <section class="solar-card global-card">
-          <div class="field">
-            <label for="principal">Purchase amount</label>
-            <p class="helper">Total price</p>
-            <input
-              id="principal"
-              name="principal"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="e.g. 1200"
-              .value=${this.principalInput}
-              @input=${this._onInput}
-              required
-            />
-          </div>
-
-          <div class="timing-row">
-            <div class="field compact">
-              <label for="mode">Calculation mode</label>
-              <p class="helper">
-                Real world is slightly more accurate when you know you loan start date
-              </p>
-              <select id="mode" name="mode" .value=${this.modeInput} @input=${this._onInput}>
-                <option value="idealized">Idealized (31-day months)</option>
-                <option value="real">Real world calendar</option>
-              </select>
-            </div>
-
-            <div
-              style="display:${this.modeInput === 'real' ? html`inherited` : html`hidden`}"
-              class="field compact"
-            >
-              <label for="startDate">Start date</label>
-              <p class="helper">Needed only for the real-world calendar option.</p>
-              <input
-                id="startDate"
-                name="startDate"
-                type="date"
-                placeholder="Starting date for schedule"
-                .value=${this.startDateInput}
-                @input=${this._onInput}
-                ?required=${this.modeInput === 'real'}
-              />
-            </div>
-          </div>
-        </section>
-
-        <section class="cards-wrapper">
-          <article class="option-card loan-card">
-            <div class="pill-link">
-              <span class="strategy-pill">Loan + Savings Strategy</span>
-            </div>
-            <div class="card-heading">
-              <h2>Loan</h2>
-              <p class="subtitle">Spread payments over time.</p>
-            </div>
-
-            <div class="field-group">
-              <p class="group-label">Term Loan Information</p>
-              <div class="field">
-                <label for="loanRate">Loan Nominal Annual Rate</label>
-                <p class="helper">Enter 0% for promotional offers.</p>
-                <input
-                  id="loanRate"
-                  name="loanRate"
-                  type="number"
-                  step="0.01"
-                  inputmode="decimal"
-                  min="0"
-                  placeholder="e.g. 5.5"
-                  .value=${this.loanRateInput}
-                  @input=${this._onInput}
-                />
-              </div>
-
-              <div class="field">
-                <label for="termMonths">How long will you take to pay? (months)</label>
-                <p class="helper">Used for loan payment calculations.</p>
-                <input
-                  id="termMonths"
-                  name="termMonths"
-                  type="number"
-                  step="1"
-                  inputmode="numeric"
-                  min="1"
-                  placeholder="e.g. 12"
-                  .value=${this.termMonthsInput}
-                  @input=${this._onInput}
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="mini-results">
-              <p>
-                <span class="label">Monthly payment:</span>
-                <span data-role="loan-payment">${loanPaymentText}</span>
-              </p>
-              <p>
-                <span class="label">Total interest paid:</span>
-                <span data-role="loan-interest">${loanInterestText}</span>
-              </p>
-            </div>
-          </article>
-
-          <article class="option-card savings-card">
-            <div class="pill-link">
-              <span class="strategy-pill">Loan + Savings Strategy</span>
-            </div>
-            <div class="card-heading">
-              <h2>Savings while you carry the loan</h2>
-              <p class="subtitle">Where would-be loan payments sit and earn interest.</p>
-            </div>
-
-            <div class="field-group">
-              <p class="group-label">Deposit Information</p>
-              <div class="field">
-                <label for="apy">Savings or deposit APY</label>
-                <p class="helper">APY on the account holding future payments.</p>
-                <input
-                  id="apy"
-                  name="apy"
-                  type="number"
-                  step="0.01"
-                  inputmode="decimal"
-                  min="0"
-                  placeholder="e.g. 4.5"
-                  .value=${this.apyInput}
-                  @input=${this._onInput}
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="mini-results">
-              <p>
-                <span class="label">Interest earned on parked payments:</span>
-                <span data-role="deposit-interest">${savingsInterestText}</span>
-              </p>
-              ${Number.isFinite(metrics.loanInterest)
-                ? null
-                : html`
-                    <p class="muted helper">
-                      We’ll calculate savings on your loan payments once you enter a loan rate on
-                      the left.
-                    </p>
-                  `}
-            </div>
-          </article>
-
-          <article class="option-card card-card">
-            <div class="pill-link">
-              <span class="strategy-pill">Credit Card Strategy</span>
-            </div>
-            <div class="card-heading">
-              <h2>Credit card</h2>
-              <p class="subtitle">Use your credit card.</p>
-            </div>
-
-            <div class="field-group">
-              <p class="group-label">Credit Card Information</p>
-              <div class="field">
-                <label for="ccRate">Credit card APR</label>
-                <input
-                  id="ccRate"
-                  name="ccRate"
-                  type="number"
-                  step="0.01"
-                  inputmode="decimal"
-                  min="0"
-                  placeholder="Defaults to 28.99%"
-                  .value=${this.ccRateInput}
-                  @input=${this._onInput}
-                />
-              </div>
-              <div class="field">
-                <label for="ccRewardsRate">Rewards rate</label>
-                <p class="helper">For this purchase (cash back, points, miles).</p>
-                <input
-                  id="ccRewardsRate"
-                  name="ccRewardsRate"
-                  type="number"
-                  step="0.01"
-                  inputmode="decimal"
-                  min="0"
-                  placeholder="e.g. 2"
-                  .value=${this.ccRewardsRateInput}
-                  @input=${this._onInput}
-                />
-              </div>
-            </div>
-
-            <div class="mini-results">
-              <p>
-                <span class="label">Rewards earned:</span>
-                <span data-role="cc-rewards">${ccRewardsText}</span>
-              </p>
-              <p>
-                <span class="label">Example One Statement Cycle Interest:</span>
-                <span data-role="cc-interest">${ccInterestText}</span>
-              </p>
-            </div>
-          </article>
-        </section>
-
-        <section class="solar-card summary-card">
-          <div class="bullets">
-            <p>
-              <span class="bullet-label">Loan + savings net benefit/cost:</span>
-              ${loanSavingsCostText}
-            </p>
-            <p><span class="bullet-label">Plain loan cost:</span> ${loanInterestText}</p>
-            <p><span class="bullet-label">Credit reward:</span> ${ccRewardsText}</p>
-            <p>
-              <span class="bullet-label">One cycle credit card cost if not paid:</span>
-              ${ccInterestText}>
-            </p>
-          </div>
-        </section>
-
+        ${this._renderIntro()} ${this._renderGlobalInputs()} ${this._renderCards(metrics)}
+        ${this._renderSummary(metrics)}
         <p class="error" data-role="error" role="alert">${this.errorMessage}</p>
       </article>
     `;
@@ -328,9 +100,25 @@ class TradeoffWidget extends LitElement {
     this._calculateIfReady();
   }
 
-  _onToggleUseGlobalTerm(event) {
-    this.useGlobalTerm = event.target.checked;
-    this.errorMessage = '';
+  _onLoanChange(event) {
+    const detail = event.detail || {};
+    if (!detail.valid) {
+      this._loanData = null;
+      this._calculateIfReady();
+      return;
+    }
+    this._loanData = detail;
+    this._calculateIfReady();
+  }
+
+  _onDepositChange(event) {
+    const detail = event.detail || {};
+    if (!detail.valid) {
+      this._depositData = null;
+      this._calculateIfReady();
+      return;
+    }
+    this._depositData = detail;
     this._calculateIfReady();
   }
 
@@ -348,33 +136,19 @@ class TradeoffWidget extends LitElement {
       return;
     }
 
-    const baseTermMonths = this._parseInteger(this.termMonthsInput);
-    const customTermMonths = this.useGlobalTerm
-      ? baseTermMonths
-      : this._parseInteger(this.customTermMonthsInput);
-    const termMonths = this.useGlobalTerm ? baseTermMonths : customTermMonths;
-    if (termMonths === null) {
+    if (!this._loanData || !this._loanData.valid) {
       this._clearResult();
       return;
     }
-    if (termMonths <= 0) {
-      this._setError('Enter a positive value for the term.');
-      return;
-    }
+    const { termMonths, loanRate } = this._loanData;
 
-    const apyPercent = this._parseMoney(this.apyInput);
-    if (apyPercent === null) {
+    if (!this._depositData || !this._depositData.valid) {
       this._clearResult();
       return;
     }
-    if (apyPercent < 0) {
+    const { depositApy } = this._depositData;
+    if (!Number.isFinite(depositApy) || depositApy < 0) {
       this._setError('APY must be zero or greater.');
-      return;
-    }
-
-    const ratePercent = this._parseMoney(this.loanRateInput);
-    if (ratePercent !== null && ratePercent < 0) {
-      this._setError('Rate must be zero or greater.');
       return;
     }
 
@@ -413,8 +187,6 @@ class TradeoffWidget extends LitElement {
       }
     }
 
-    const loanRate = ratePercent === null ? 0 : ratePercent / 100;
-    const depositApy = apyPercent / 100;
     const ccRewardsRate = ccRewardsPercent === null ? 0 : ccRewardsPercent / 100;
     const ccRate = (ccRatePercent === null ? DEFAULT_CC_RATE_PERCENT : ccRatePercent) / 100;
 
@@ -454,7 +226,10 @@ class TradeoffWidget extends LitElement {
       Number.isFinite(netValue) && Number.isFinite(loanInterest)
         ? netValue + loanInterest
         : Number.NaN;
-    const loanSavingsCost = Number.isFinite(netValue) ? -netValue : Number.NaN;
+    const loanSavingsCost =
+      Number.isFinite(netValue) && Number.isFinite(loanInterest)
+        ? loanInterest - depositInterest
+        : Number.NaN;
     const cardNetCost =
       Number.isFinite(ccInterestValue) && Number.isFinite(ccRewardsValue)
         ? ccInterestValue - ccRewardsValue
@@ -496,6 +271,181 @@ class TradeoffWidget extends LitElement {
     );
   }
 
+  _renderIntro() {
+    return html`
+      <header class="intro">
+        <p class="eyebrow">Loan, savings, credit card</p>
+        <h1>Comparing a loan, loan + savings account, and a credit card</h1>
+      </header>
+    `;
+  }
+
+  _renderGlobalInputs() {
+    return html`
+      <section class="solar-card global-card">
+        <div class="field">
+          <label for="principal">Purchase amount</label>
+          <p class="helper">Total price</p>
+          <input
+            id="principal"
+            name="principal"
+            type="number"
+            step="0.01"
+            inputmode="decimal"
+            min="0"
+            placeholder="e.g. 1200"
+            .value=${this.principalInput}
+            @input=${this._onInput}
+            required
+          />
+        </div>
+
+        <div class="timing-row">
+          <div class="field compact">
+            <label for="mode">Calculation mode</label>
+            <p class="helper">
+              Real world is slightly more accurate when you know your loan start date.
+            </p>
+            <select id="mode" name="mode" .value=${this.modeInput} @input=${this._onInput}>
+              <option value="idealized">Idealized (31-day months)</option>
+              <option value="real">Real world calendar</option>
+            </select>
+          </div>
+
+          ${this.modeInput === 'real'
+            ? html`
+                <div class="field compact">
+                  <label for="startDate">Start date</label>
+                  <p class="helper">Needed only for the real-world calendar option.</p>
+                  <input
+                    id="startDate"
+                    name="startDate"
+                    type="date"
+                    placeholder="Starting date for schedule"
+                    .value=${this.startDateInput}
+                    @input=${this._onInput}
+                    ?required=${this.modeInput === 'real'}
+                  />
+                </div>
+              `
+            : null}
+        </div>
+      </section>
+    `;
+  }
+
+  _renderCards(metrics) {
+    const ccRewardsText = this._formatMaybeCurrency(metrics.cardRewards);
+    const ccInterestText = this._formatMaybeCurrency(metrics.cardInterest);
+
+    return html`
+      <section class="cards-wrapper">
+        <loan-card
+          .principal=${this._principalValue()}
+          .mode=${this.modeInput}
+          .startDate=${this.startDateInput}
+          .currency=${this.currency}
+          @loan-change=${this._onLoanChange}
+        ></loan-card>
+
+        <savings-card
+          .principal=${this._principalValue()}
+          .mode=${this.modeInput}
+          .startDate=${this.startDateInput}
+          .currency=${this.currency}
+          .results=${{
+            depositInterest: metrics.depositInterest,
+            savingsEndBalance: metrics.savingsEndBalance,
+            loanSavingsCost: metrics.loanSavingsCost,
+            loanInterest: metrics.loanInterest,
+          }}
+          @deposit-change=${this._onDepositChange}
+        ></savings-card>
+
+        <article class="option-card card-card">
+          <div class="pill-link">
+            <span class="strategy-pill">Credit Card Strategy</span>
+          </div>
+          <div class="card-heading">
+            <h2>Credit card</h2>
+            <p class="subtitle">Use your credit card.</p>
+          </div>
+
+          <div class="field-group">
+            <p class="group-label">Credit Card Information</p>
+            <div class="field">
+              <label for="ccRate">Credit card APR</label>
+              <input
+                id="ccRate"
+                name="ccRate"
+                type="number"
+                step="0.01"
+                inputmode="decimal"
+                min="0"
+                placeholder="Defaults to 28.99%"
+                .value=${this.ccRateInput}
+                @input=${this._onInput}
+              />
+            </div>
+            <div class="field">
+              <label for="ccRewardsRate">Rewards rate</label>
+              <p class="helper">For this purchase (cash back, points, miles).</p>
+              <input
+                id="ccRewardsRate"
+                name="ccRewardsRate"
+                type="number"
+                step="0.01"
+                inputmode="decimal"
+                min="0"
+                placeholder="e.g. 2"
+                .value=${this.ccRewardsRateInput}
+                @input=${this._onInput}
+              />
+            </div>
+          </div>
+
+          <div class="mini-results">
+            <p>
+              <span class="label">Rewards earned:</span>
+              <span data-role="cc-rewards">${ccRewardsText}</span>
+            </p>
+            <p>
+              <span class="label">Example One Statement Cycle Interest:</span>
+              <span data-role="cc-interest">${ccInterestText}</span>
+            </p>
+          </div>
+        </article>
+      </section>
+    `;
+  }
+
+  _renderSummary(metrics) {
+    const loanInterestText = this._formatMaybeCurrency(metrics.loanInterest);
+    const loanSavingsCostText = this._formatMaybeCurrency(metrics.loanSavingsCost, {
+      fallback: '—',
+      sign: true,
+    });
+    const ccRewardsText = this._formatMaybeCurrency(metrics.cardRewards);
+    const ccInterestText = this._formatMaybeCurrency(metrics.cardInterest);
+
+    return html`
+      <section class="solar-card summary-card">
+        <div class="bullets">
+          <p>
+            <span class="bullet-label">Loan + savings net benefit/cost:</span>
+            <span data-role="loan-savings-cost">${loanSavingsCostText}</span>
+          </p>
+          <p><span class="bullet-label">Plain loan cost:</span> ${loanInterestText}</p>
+          <p><span class="bullet-label">Credit reward:</span> <span>${ccRewardsText}</span></p>
+          <p>
+            <span class="bullet-label">One cycle credit card cost if not paid:</span>
+            <span>${ccInterestText}</span>
+          </p>
+        </div>
+      </section>
+    `;
+  }
+
   _setError(message) {
     this.errorMessage = message;
     this._clearResult();
@@ -506,6 +456,11 @@ class TradeoffWidget extends LitElement {
     this._lastCcRewardsValue = undefined;
     this._lastCcInterestValue = undefined;
     this.metrics = null;
+  }
+
+  _principalValue() {
+    const parsed = Number.parseFloat(String(this.principalInput).trim());
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   _parseMoney(value) {
@@ -631,402 +586,7 @@ class TradeoffWidget extends LitElement {
     return 'caution';
   }
 
-  static styles = css`
-    :host {
-      display: block;
-      --base03: #002b36;
-      --base02: #073642;
-      --base01: #586e75;
-      --base00: #657b83;
-      --base0: #839496;
-      --base1: #93a1a1;
-      --base2: #eee8d5;
-      --base3: #fdf6e3;
-      --yellow: #b58900;
-      --orange: #cb4b16;
-      --red: #dc322f;
-      --magenta: #d33682;
-      --violet: #6c71c4;
-      --blue: #268bd2;
-      --cyan: #2aa198;
-      --green: #859900;
-    }
-
-    .tradeoff-shell {
-      display: grid;
-      gap: 18px;
-      color: var(--base0);
-      background: var(--base03);
-      padding: 18px;
-      border-radius: 14px;
-      border: 1px solid var(--base02);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-      font-family:
-        'IBM Plex Sans',
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        'Segoe UI',
-        sans-serif;
-    }
-
-    .intro h1 {
-      margin: 4px 0;
-      font-size: 28px;
-      color: var(--base1);
-    }
-
-    .eyebrow {
-      margin: 0;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 12px;
-      color: var(--base00);
-    }
-
-    .lede {
-      margin: 0;
-      color: var(--base0);
-      font-size: 16px;
-    }
-
-    .solar-card {
-      background: var(--base02);
-      border: 1px solid var(--base01);
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    .global-card {
-      display: grid;
-      gap: 12px;
-    }
-
-    .global-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 12px;
-    }
-
-    .timing-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-      align-items: end;
-    }
-
-    .cards-wrapper {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-      align-items: start;
-    }
-
-    .option-card {
-      background: var(--base02);
-      border: 1px solid var(--base01);
-      border-radius: 12px;
-      padding: 16px;
-      display: grid;
-      gap: 10px;
-      min-height: 100%;
-      position: relative;
-    }
-
-    .loan-card {
-      border-top: 4px solid var(--orange);
-    }
-
-    .savings-card {
-      border-top: 4px solid var(--green);
-    }
-
-    .card-card {
-      border-top: 4px solid var(--violet);
-    }
-
-    .pill-link {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .strategy-pill {
-      background: linear-gradient(
-        90deg,
-        var(--orange) 0%,
-        var(--orange) 50%,
-        var(--green) 50%,
-        var(--green) 100%
-      );
-      color: var(--base3);
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 13px;
-      letter-spacing: 0.1px;
-      text-align: center;
-      flex: 1 1 auto;
-    }
-
-    .option-tag {
-      background: var(--base01);
-      color: var(--base3);
-      padding: 6px 10px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    .option-tag.subtle {
-      background: var(--base00);
-      color: var(--base3);
-    }
-
-    .card-heading h2 {
-      margin: 0;
-      color: var(--base1);
-      font-size: 20px;
-    }
-
-    .subtitle {
-      margin: 2px 0 0 0;
-      color: var(--base0);
-      font-size: 14px;
-    }
-
-    .field {
-      display: grid;
-      gap: 4px;
-    }
-
-    .field.compact {
-      gap: 2px;
-    }
-
-    .field.inline-field {
-      grid-template-columns: 1fr;
-    }
-
-    .field-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-    }
-
-    label {
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--base1);
-    }
-
-    .helper {
-      margin: 0;
-      color: var(--base0);
-      font-size: 13px;
-    }
-
-    input,
-    select {
-      background: var(--base03);
-      border: 1px solid var(--base01);
-      border-radius: 6px;
-      padding: 10px;
-      color: var(--base1);
-      font-size: 15px;
-      font-family:
-        'IBM Plex Sans',
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        'Segoe UI',
-        sans-serif;
-    }
-
-    input:focus,
-    select:focus {
-      outline: 2px solid var(--blue);
-      box-shadow: 0 0 0 2px rgba(38, 139, 210, 0.25);
-    }
-
-    .field-group {
-      border: 1px dashed var(--base01);
-      border-radius: 10px;
-      padding: 10px;
-      display: grid;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .group-label {
-      margin: 0;
-      font-weight: 700;
-      color: var(--base0);
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      font-size: 12px;
-    }
-
-    .checkbox-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      font-size: 14px;
-      color: var(--base0);
-    }
-
-    .checkbox-row input {
-      width: 18px;
-      height: 18px;
-    }
-
-    .mini-results {
-      background: rgba(255, 255, 255, 0.02);
-      border-radius: 10px;
-      padding: 10px;
-      display: grid;
-      gap: 6px;
-      border: 1px solid var(--base01);
-    }
-
-    .mini-results p {
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      color: var(--base1);
-      font-size: 14px;
-    }
-
-    .mini-results .label {
-      color: var(--base0);
-      font-weight: 600;
-    }
-
-    .connector {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: var(--base0);
-      font-size: 13px;
-      letter-spacing: 0.02em;
-    }
-
-    .connector span {
-      padding: 6px 10px;
-      border: 1px dashed var(--base01);
-      border-radius: 999px;
-    }
-
-    .mobile-connector {
-      display: none;
-      color: var(--base0);
-      background: rgba(133, 153, 0, 0.12);
-      border: 1px solid var(--green);
-      border-radius: 8px;
-      padding: 8px;
-      font-size: 13px;
-    }
-
-    .summary-card {
-      display: grid;
-      gap: 10px;
-    }
-
-    .summary-headline {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--base1);
-    }
-
-    .chip {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      justify-self: end;
-    }
-
-    .chip.positive {
-      background: var(--green);
-    }
-
-    .chip.caution {
-      background: var(--orange);
-    }
-
-    .chip.baseline {
-      background: var(--blue);
-    }
-
-    .chip.neutral {
-      background: var(--base00);
-    }
-
-    .bullets {
-      display: grid;
-      gap: 4px;
-      color: var(--base0);
-    }
-
-    .bullet-label {
-      font-weight: 700;
-      color: var(--base1);
-      margin-right: 6px;
-    }
-
-    .muted {
-      color: var(--base00);
-    }
-
-    .error {
-      color: var(--red);
-      min-height: 18px;
-      margin: 0;
-      font-size: 13px;
-    }
-
-    @media (max-width: 960px) {
-      .cards-wrapper {
-        grid-template-columns: 1fr;
-      }
-
-      .connector {
-        display: none;
-      }
-
-      .mobile-connector {
-        display: block;
-      }
-    }
-
-    @media (prefers-color-scheme: light) {
-      .tradeoff-shell {
-        background: var(--base3);
-        color: var(--base00);
-        border-color: var(--base2);
-      }
-
-      .solar-card,
-      .option-card {
-        background: var(--base2);
-        border-color: var(--base1);
-      }
-
-      input,
-      select {
-        background: var(--base3);
-        color: var(--base00);
-        border-color: var(--base1);
-      }
-
-      .mini-results {
-        background: rgba(0, 0, 0, 0.03);
-      }
-    }
-  `;
+  static styles = tradeoffWidgetStyles;
 }
 
 customElements.define('tradeoff-widget', TradeoffWidget);

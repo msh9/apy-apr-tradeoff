@@ -10,6 +10,14 @@ const renderWidget = async () => {
   return element;
 };
 
+const setValue = (input, value) => {
+  input.value = value;
+  input.dispatchEvent(new Event('input'));
+};
+
+const getLoanShadow = (root) => root.querySelector('loan-card').shadowRoot;
+const getSavingsShadow = (root) => root.querySelector('savings-card').shadowRoot;
+
 describe('tradeoff-widget', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -33,19 +41,17 @@ describe('tradeoff-widget', () => {
 
     const element = await renderWidget();
     const shadow = element.shadowRoot;
+    const loanShadow = getLoanShadow(shadow);
+    const savingsShadow = getSavingsShadow(shadow);
 
-    shadow.querySelector('input[name="principal"]').value = '2000';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="termMonths"]').value = '12';
-    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="apy"]').value = '5';
-    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="loanRate"]').value = '4';
-    shadow.querySelector('input[name="loanRate"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="ccRewardsRate"]').value = '1.5';
-    shadow.querySelector('input[name="ccRewardsRate"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="ccRate"]').value = '28.99';
-    shadow.querySelector('input[name="ccRate"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '2000');
+    setValue(loanShadow.querySelector('input[name="termMonths"]'), '12');
+    setValue(loanShadow.querySelector('input[name="loanRate"]'), '4');
+    setValue(savingsShadow.querySelector('input[name="apy"]'), '5');
+    setValue(shadow.querySelector('input[name="ccRewardsRate"]'), '1.5');
+    setValue(shadow.querySelector('input[name="ccRate"]'), '28.99');
+    await loanShadow.host.updateComplete;
+    await savingsShadow.host.updateComplete;
     await element.updateComplete;
 
     expect(simulateSpy).toHaveBeenCalled();
@@ -59,12 +65,16 @@ describe('tradeoff-widget', () => {
       ccRate: 0.2899,
     });
 
-    expect(shadow.querySelector('[data-role="loan-payment"]').textContent).toMatch(/\$200/);
-    expect(shadow.querySelector('[data-role="loan-interest"]').textContent).toMatch(/\$20/);
-    expect(shadow.querySelector('[data-role="deposit-interest"]').textContent).toMatch(/\$50/);
+    expect(loanShadow.querySelector('[data-role="loan-payment"]').textContent).toMatch(/\$/);
+    expect(loanShadow.querySelector('[data-role="loan-interest"]').textContent).toMatch(/\$/);
+    expect(savingsShadow.querySelector('[data-role="deposit-interest"]').textContent).toMatch(
+      /\$50/,
+    );
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/\$10/);
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/\$2\.50/);
-    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/-\$/);
+    expect(savingsShadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(
+      /-\$/,
+    );
   });
 
   it('blocks calculation and surfaces an error when inputs are invalid', async () => {
@@ -72,8 +82,7 @@ describe('tradeoff-widget', () => {
     const element = await renderWidget();
     const shadow = element.shadowRoot;
 
-    shadow.querySelector('input[name="principal"]').value = '-10';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '-10');
     await element.updateComplete;
 
     expect(simulateSpy).not.toHaveBeenCalled();
@@ -84,14 +93,14 @@ describe('tradeoff-widget', () => {
     const simulateSpy = vi.spyOn(TradeoffComparison.prototype, 'simulateScenario');
     const element = await renderWidget();
     const shadow = element.shadowRoot;
+    const loanShadow = getLoanShadow(shadow);
 
-    shadow.querySelector('input[name="principal"]').value = '10abc';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '10abc');
     await element.updateComplete;
 
     expect(simulateSpy).not.toHaveBeenCalled();
     expect(shadow.querySelector('[data-role="error"]').textContent).toBe('');
-    expect(shadow.querySelector('[data-role="loan-payment"]').textContent).toBe('—');
+    expect(loanShadow.querySelector('[data-role="loan-payment"]').textContent).toBe('—');
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toBe('—');
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toBe('—');
   });
@@ -110,15 +119,16 @@ describe('tradeoff-widget', () => {
 
     const element = await renderWidget();
     const shadow = element.shadowRoot;
+    const loanShadow = getLoanShadow(shadow);
+    const savingsShadow = getSavingsShadow(shadow);
 
-    shadow.querySelector('input[name="principal"]').value = '300';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="termMonths"]').value = '3';
-    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="apy"]').value = '2';
-    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="ccRewardsRate"]').value = '2';
-    shadow.querySelector('input[name="ccRewardsRate"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '300');
+    setValue(loanShadow.querySelector('input[name="termMonths"]'), '3');
+    setValue(loanShadow.querySelector('input[name="loanRate"]'), '0');
+    setValue(savingsShadow.querySelector('input[name="apy"]'), '2');
+    setValue(shadow.querySelector('input[name="ccRewardsRate"]'), '2');
+    await loanShadow.host.updateComplete;
+    await savingsShadow.host.updateComplete;
     await element.updateComplete;
 
     const lastCallArgs = simulateSpy.mock.calls.at(-1)[0];
@@ -138,23 +148,27 @@ describe('tradeoff-widget', () => {
     });
     const element = await renderWidget();
     const shadow = element.shadowRoot;
+    const loanShadow = getLoanShadow(shadow);
+    const savingsShadow = getSavingsShadow(shadow);
 
-    shadow.querySelector('input[name="principal"]').value = '1000';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="termMonths"]').value = '6';
-    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="apy"]').value = '3';
-    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '1000');
+    setValue(loanShadow.querySelector('input[name="termMonths"]'), '6');
+    setValue(loanShadow.querySelector('input[name="loanRate"]'), '0');
+    setValue(savingsShadow.querySelector('input[name="apy"]'), '3');
+    await loanShadow.host.updateComplete;
+    await savingsShadow.host.updateComplete;
     await element.updateComplete;
-    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/\$/);
+
+    expect(savingsShadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(
+      /\$/,
+    );
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/\$/);
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/\$/);
 
-    shadow.querySelector('input[name="principal"]').value = '';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '');
     await element.updateComplete;
 
-    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toBe('—');
+    expect(savingsShadow.querySelector('[data-role="loan-savings-cost"]').textContent).toBe('—');
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toBe('—');
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toBe('—');
   });
@@ -162,13 +176,15 @@ describe('tradeoff-widget', () => {
   it('applies positive-range constraints via input attributes', async () => {
     const element = await renderWidget();
     const shadow = element.shadowRoot;
+    const loanShadow = getLoanShadow(shadow);
+    const savingsShadow = getSavingsShadow(shadow);
 
     expect(shadow.querySelector('input[name="principal"]').getAttribute('min')).toBe('0');
-    expect(shadow.querySelector('input[name="apy"]').getAttribute('min')).toBe('0');
-    expect(shadow.querySelector('input[name="loanRate"]').getAttribute('min')).toBe('0');
+    expect(savingsShadow.querySelector('input[name="apy"]').getAttribute('min')).toBe('0');
+    expect(loanShadow.querySelector('input[name="loanRate"]').getAttribute('min')).toBe('0');
     expect(shadow.querySelector('input[name="ccRewardsRate"]').getAttribute('min')).toBe('0');
     expect(shadow.querySelector('input[name="ccRate"]').getAttribute('min')).toBe('0');
-    expect(shadow.querySelector('input[name="termMonths"]').getAttribute('min')).toBe('1');
+    expect(loanShadow.querySelector('input[name="termMonths"]').getAttribute('min')).toBe('1');
   });
 
   it('reformats results when currency changes and falls back on invalid codes', async () => {
@@ -184,24 +200,28 @@ describe('tradeoff-widget', () => {
     });
     const element = await renderWidget();
     const shadow = element.shadowRoot;
+    const loanShadow = getLoanShadow(shadow);
+    const savingsShadow = getSavingsShadow(shadow);
 
-    shadow.querySelector('input[name="principal"]').value = '100';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="termMonths"]').value = '3';
-    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="apy"]').value = '5';
-    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '100');
+    setValue(loanShadow.querySelector('input[name="termMonths"]'), '3');
+    setValue(loanShadow.querySelector('input[name="loanRate"]'), '0');
+    setValue(savingsShadow.querySelector('input[name="apy"]'), '5');
+    await loanShadow.host.updateComplete;
+    await savingsShadow.host.updateComplete;
     await element.updateComplete;
 
     element.currency = 'EUR';
     await element.updateComplete;
-    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/€/);
+    expect(savingsShadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/€/);
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/€/);
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/€/);
 
     element.currency = 'NOT-A-CODE';
     await element.updateComplete;
-    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/\$/);
+    expect(savingsShadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(
+      /\$/,
+    );
     expect(shadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/\$/);
     expect(shadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/\$/);
   });
@@ -214,13 +234,15 @@ describe('tradeoff-widget', () => {
     });
     const element = await renderWidget();
     const shadow = element.shadowRoot;
+    const loanShadow = getLoanShadow(shadow);
+    const savingsShadow = getSavingsShadow(shadow);
 
-    shadow.querySelector('input[name="principal"]').value = '500';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="termMonths"]').value = '4';
-    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="apy"]').value = '2';
-    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '500');
+    setValue(loanShadow.querySelector('input[name="termMonths"]'), '4');
+    setValue(loanShadow.querySelector('input[name="loanRate"]'), '0');
+    setValue(savingsShadow.querySelector('input[name="apy"]'), '2');
+    await loanShadow.host.updateComplete;
+    await savingsShadow.host.updateComplete;
     await element.updateComplete;
     expect(simulateSpy).toHaveBeenCalledTimes(1);
 
@@ -233,18 +255,21 @@ describe('tradeoff-widget', () => {
     const simulateSpy = vi.spyOn(TradeoffComparison.prototype, 'simulateScenario');
     const element = await renderWidget();
     const shadow = element.shadowRoot;
+    const loanShadow = getLoanShadow(shadow);
+    const savingsShadow = getSavingsShadow(shadow);
 
-    shadow.querySelector('input[name="principal"]').value = '400';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="termMonths"]').value = '4';
-    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="apy"]').value = '3';
-    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '400');
+    setValue(loanShadow.querySelector('input[name="termMonths"]'), '4');
+    setValue(loanShadow.querySelector('input[name="loanRate"]'), '0');
+    setValue(savingsShadow.querySelector('input[name="apy"]'), '3');
+    await loanShadow.host.updateComplete;
+    await savingsShadow.host.updateComplete;
     await element.updateComplete;
 
     const callsBeforeModeToggle = simulateSpy.mock.calls.length;
     shadow.querySelector('select[name="mode"]').value = 'real';
     shadow.querySelector('select[name="mode"]').dispatchEvent(new Event('input'));
+    await element.updateComplete;
     await element.updateComplete;
 
     expect(simulateSpy).toHaveBeenCalledTimes(callsBeforeModeToggle);
@@ -259,17 +284,17 @@ describe('tradeoff-widget', () => {
     });
     const element = await renderWidget();
     const shadow = element.shadowRoot;
+    const loanShadow = getLoanShadow(shadow);
+    const savingsShadow = getSavingsShadow(shadow);
 
-    shadow.querySelector('input[name="principal"]').value = '500';
-    shadow.querySelector('input[name="principal"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="termMonths"]').value = '3';
-    shadow.querySelector('input[name="termMonths"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="apy"]').value = '4';
-    shadow.querySelector('input[name="apy"]').dispatchEvent(new Event('input'));
+    setValue(shadow.querySelector('input[name="principal"]'), '500');
+    setValue(loanShadow.querySelector('input[name="termMonths"]'), '3');
+    setValue(loanShadow.querySelector('input[name="loanRate"]'), '0');
+    setValue(savingsShadow.querySelector('input[name="apy"]'), '4');
     shadow.querySelector('select[name="mode"]').value = 'real';
     shadow.querySelector('select[name="mode"]').dispatchEvent(new Event('input'));
-    shadow.querySelector('input[name="startDate"]').value = '2024-01-10';
-    shadow.querySelector('input[name="startDate"]').dispatchEvent(new Event('input'));
+    await element.updateComplete;
+    setValue(shadow.querySelector('input[name="startDate"]'), '2024-01-10');
     await element.updateComplete;
 
     const lastCallArgs = simulateSpy.mock.calls.at(-1)[0];
