@@ -91,6 +91,13 @@ const tradeoffWidgetStyles = css`
     align-items: start;
   }
 
+  .loan-savings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+
   .option-card {
     background: var(--base02);
     border: 1px solid var(--base01);
@@ -359,6 +366,10 @@ const tradeoffWidgetStyles = css`
 
   @media (max-width: 960px) {
     .cards-wrapper {
+      grid-template-columns: 1fr;
+    }
+
+    .loan-savings-grid {
       grid-template-columns: 1fr;
     }
 

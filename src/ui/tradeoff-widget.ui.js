@@ -1,8 +1,7 @@
 import { LitElement, html } from 'lit';
 
 import { TradeoffComparison } from '../tradeoff.js';
-import './loan-card.ui.js';
-import './savings-card.ui.js';
+import './loan-savings-card.ui.js';
 
 import { tradeoffWidgetStyles } from './tradeoff-widget.styles.js';
 
@@ -340,15 +339,7 @@ class TradeoffWidget extends LitElement {
 
     return html`
       <section class="cards-wrapper">
-        <loan-card
-          .principal=${this._principalValue()}
-          .mode=${this.modeInput}
-          .startDate=${this.startDateInput}
-          .currency=${this.currency}
-          @loan-change=${this._onLoanChange}
-        ></loan-card>
-
-        <savings-card
+        <loan-savings-card
           .principal=${this._principalValue()}
           .mode=${this.modeInput}
           .startDate=${this.startDateInput}
@@ -359,8 +350,9 @@ class TradeoffWidget extends LitElement {
             loanSavingsCost: metrics.loanSavingsCost,
             loanInterest: metrics.loanInterest,
           }}
+          @loan-change=${this._onLoanChange}
           @deposit-change=${this._onDepositChange}
-        ></savings-card>
+        ></loan-savings-card>
 
         <article class="option-card card-card">
           <div class="pill-link">
