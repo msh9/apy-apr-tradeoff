@@ -30,18 +30,11 @@ const tradeoffWidgetStyles = css`
     border-radius: 14px;
     border: 1px solid var(--base02);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-    font-family:
-      'IBM Plex Sans',
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      sans-serif;
   }
 
   .intro h1 {
     margin: 4px 0;
-    font-size: 28px;
+    font-size: 2rem;
     color: var(--base1);
   }
 
@@ -49,7 +42,7 @@ const tradeoffWidgetStyles = css`
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    font-size: 12px;
+    font-size: .75rem;
     color: var(--base00);
   }
 
@@ -74,8 +67,7 @@ const tradeoffWidgetStyles = css`
 
   .cards-wrapper {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    row-gap: 32px;
     align-items: start;
   }
 
@@ -94,7 +86,6 @@ const tradeoffWidgetStyles = css`
     display: grid;
     gap: 10px;
     min-height: 100%;
-    position: relative;
   }
 
   .loan-card {
@@ -128,7 +119,7 @@ const tradeoffWidgetStyles = css`
     padding: 6px 10px;
     border-radius: 999px;
     font-weight: 700;
-    font-size: 13px;
+    font-size: .75rem;
     letter-spacing: 0.1px;
     text-align: center;
     flex: 1 1 auto;
@@ -137,13 +128,13 @@ const tradeoffWidgetStyles = css`
   .card-heading h2 {
     margin: 0;
     color: var(--base1);
-    font-size: 20px;
+    font-size: 1.5rem;
   }
 
   .subtitle {
     margin: 2px 0 0 0;
     color: var(--base0);
-    font-size: 14px;
+    font-size: .8rem;
   }
 
   .field {
@@ -167,14 +158,14 @@ const tradeoffWidgetStyles = css`
 
   label {
     font-weight: 700;
-    font-size: 15px;
+    font-size: 1rem;
     color: var(--base1);
   }
 
   .helper {
     margin: 0;
     color: var(--base0);
-    font-size: 13px;
+    font-size: .8rem;
   }
 
   input,
@@ -184,14 +175,7 @@ const tradeoffWidgetStyles = css`
     border-radius: 6px;
     padding: 10px;
     color: var(--base1);
-    font-size: 15px;
-    font-family:
-      'IBM Plex Sans',
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      sans-serif;
+    font-size: 1rem;
   }
 
   input:focus,
@@ -215,7 +199,7 @@ const tradeoffWidgetStyles = css`
     color: var(--base0);
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    font-size: 12px;
+    font-size: .9rem;
   }
 
   .mini-results {
@@ -233,7 +217,7 @@ const tradeoffWidgetStyles = css`
     flex-direction: column;
     gap: 2px;
     color: var(--base1);
-    font-size: 14px;
+    font-size: .9rem;
   }
 
   .mini-results .label {
@@ -266,14 +250,10 @@ const tradeoffWidgetStyles = css`
     color: var(--red);
     min-height: 18px;
     margin: 0;
-    font-size: 13px;
+    font-size: .8rem;
   }
 
   @media (max-width: 960px) {
-    .cards-wrapper {
-      grid-template-columns: 1fr;
-    }
-
     .loan-savings-grid {
       grid-template-columns: 1fr;
     }
