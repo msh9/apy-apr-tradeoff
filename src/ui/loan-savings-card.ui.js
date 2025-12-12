@@ -124,10 +124,6 @@ class LoanSavingsCard extends LitElement {
           </div>
         </article>
 
-        <div class="connector" aria-hidden="true">
-          <span>Loan payments parked here →</span>
-        </div>
-
         <article class="option-card savings-card">
           <div class="pill-link">
             <span class="strategy-pill">Loan + Savings Strategy</span>
@@ -135,10 +131,6 @@ class LoanSavingsCard extends LitElement {
           <div class="card-heading">
             <h2>Savings while you carry the loan</h2>
             <p class="subtitle">Where would-be loan payments sit and earn interest.</p>
-            <p class="subtitle mobile-connector">
-              This section models what happens if you keep each loan payment in a savings account
-              until you need to send it to the lender.
-            </p>
           </div>
 
           <div class="field-group">

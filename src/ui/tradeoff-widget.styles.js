@@ -53,12 +53,6 @@ const tradeoffWidgetStyles = css`
     color: var(--base00);
   }
 
-  .lede {
-    margin: 0;
-    color: var(--base0);
-    font-size: 16px;
-  }
-
   .solar-card {
     background: var(--base02);
     border: 1px solid var(--base01);
@@ -68,12 +62,6 @@ const tradeoffWidgetStyles = css`
 
   .global-card {
     display: grid;
-    gap: 12px;
-  }
-
-  .global-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 12px;
   }
 
@@ -144,21 +132,6 @@ const tradeoffWidgetStyles = css`
     letter-spacing: 0.1px;
     text-align: center;
     flex: 1 1 auto;
-  }
-
-  .option-tag {
-    background: var(--base01);
-    color: var(--base3);
-    padding: 6px 10px;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 12px;
-    white-space: nowrap;
-  }
-
-  .option-tag.subtle {
-    background: var(--base00);
-    color: var(--base3);
   }
 
   .card-heading h2 {
@@ -245,19 +218,6 @@ const tradeoffWidgetStyles = css`
     font-size: 12px;
   }
 
-  .checkbox-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    font-size: 14px;
-    color: var(--base0);
-  }
-
-  .checkbox-row input {
-    width: 18px;
-    height: 18px;
-  }
-
   .mini-results {
     background: rgba(255, 255, 255, 0.02);
     border-radius: 10px;
@@ -281,64 +241,9 @@ const tradeoffWidgetStyles = css`
     font-weight: 600;
   }
 
-  .connector {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: var(--base0);
-    font-size: 13px;
-    letter-spacing: 0.02em;
-  }
-
-  .connector span {
-    padding: 6px 10px;
-    border: 1px dashed var(--base01);
-    border-radius: 999px;
-  }
-
-  .mobile-connector {
-    display: none;
-    color: var(--base0);
-    background: rgba(133, 153, 0, 0.12);
-    border: 1px solid var(--green);
-    border-radius: 8px;
-    padding: 8px;
-    font-size: 13px;
-  }
-
   .summary-card {
     display: grid;
     gap: 10px;
-  }
-
-  .summary-headline {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--base1);
-  }
-
-  .chip {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    justify-self: end;
-  }
-
-  .chip.positive {
-    background: var(--green);
-  }
-
-  .chip.caution {
-    background: var(--orange);
-  }
-
-  .chip.baseline {
-    background: var(--blue);
-  }
-
-  .chip.neutral {
-    background: var(--base00);
   }
 
   .bullets {

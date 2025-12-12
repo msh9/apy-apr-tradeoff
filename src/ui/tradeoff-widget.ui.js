@@ -331,19 +331,6 @@ class TradeoffWidget extends LitElement {
     return normalized;
   }
 
-  _chipTone(item, best) {
-    if (!best || !item) {
-      return 'neutral';
-    }
-    if (item === best) {
-      return 'positive';
-    }
-    if (item.key === 'cash') {
-      return 'baseline';
-    }
-    return 'caution';
-  }
-
   static styles = tradeoffWidgetStyles;
 }
 
