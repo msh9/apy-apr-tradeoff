@@ -21,48 +21,11 @@ describe('loan-savings-card', () => {
     vi.restoreAllMocks();
   });
 
-  it('emits loan and deposit events independently with parsed data', async () => {
-    const loanListener = vi.fn();
-    const depositListener = vi.fn();
-    const element = await renderCard();
-    element.principal = 1200;
-    element.addEventListener('loan-change', (event) => loanListener(event.detail));
-    element.addEventListener('deposit-change', (event) => depositListener(event.detail));
-    await element.updateComplete;
-
-    const shadow = element.shadowRoot;
-    setValue(shadow.querySelector('input[name="loanRate"]'), '5');
-    setValue(shadow.querySelector('input[name="termMonths"]'), '12');
-    setValue(shadow.querySelector('input[name="apy"]'), '4');
-    await element.updateComplete;
-
-    expect(loanListener).toHaveBeenCalled();
-    const loanDetail = loanListener.mock.calls.at(-1)[0];
-    expect(loanDetail.valid).toBe(true);
-    expect(loanDetail.loanRate).toBeCloseTo(0.05, 4);
-    expect(loanDetail.termMonths).toBe(12);
-    expect(element.loan).toBeTruthy();
-
-    expect(depositListener).toHaveBeenCalled();
-    const depositDetail = depositListener.mock.calls.at(-1)[0];
-    expect(depositDetail.valid).toBe(true);
-    expect(depositDetail.depositApy).toBeCloseTo(0.04, 4);
-    expect(element.deposit).toBeTruthy();
-  });
-
   it('emits invalid change when principal or inputs are missing', async () => {
-    const loanListener = vi.fn();
-    const depositListener = vi.fn();
     const element = await renderCard();
     element.principal = -5;
-    element.addEventListener('loan-change', (event) => loanListener(event.detail));
-    element.addEventListener('deposit-change', (event) => depositListener(event.detail));
     await element.updateComplete;
 
-    expect(loanListener).toHaveBeenCalled();
-    expect(depositListener).toHaveBeenCalled();
-    expect(loanListener.mock.calls.at(-1)[0].valid).toBe(false);
-    expect(depositListener.mock.calls.at(-1)[0].valid).toBe(false);
     expect(element.loan).toBeNull();
     expect(element.deposit).toBeNull();
   });

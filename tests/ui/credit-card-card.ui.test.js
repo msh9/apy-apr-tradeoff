@@ -39,7 +39,6 @@ describe('credit-card-card', () => {
     expect(detail.ccRewardsRate).toBeCloseTo(0.02, 4);
     expect(detail.rewardsValue).toBeGreaterThan(0);
     expect(detail.interestValue).toBeGreaterThan(0);
-    expect(detail.periodDays).toBe(28);
   });
 
   it('uses defaults and signals invalid on bad input', async () => {

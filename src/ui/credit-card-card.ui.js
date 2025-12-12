@@ -125,7 +125,6 @@ class CreditCardCard extends LitElement {
       ccAccount: parsed.ccAccount,
       rewardsValue: parsed.rewardsValue,
       interestValue: parsed.interestValue,
-      periodDays: parsed.periodDays,
     });
   }
 
@@ -161,7 +160,6 @@ class CreditCardCard extends LitElement {
         ccRate,
         rewardsValue: rewards,
         interestValue: interest,
-        periodDays: days,
       };
     } catch {
       return null;

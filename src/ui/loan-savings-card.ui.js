@@ -223,7 +223,6 @@ class LoanSavingsCard extends LitElement {
       this.paymentValue = Number.NaN;
       this.interestValue = Number.NaN;
       this._loanData = null;
-      this._emitLoanChange({ valid: false });
     } else {
       this.paymentValue = monthlyPayment;
       this.interestValue = totalInterest;
@@ -238,7 +237,6 @@ class LoanSavingsCard extends LitElement {
         monthlyPayment,
         totalInterest,
       };
-      this._emitLoanChange(this._loanData);
     }
 
     this._calculateCombined();
@@ -248,7 +246,6 @@ class LoanSavingsCard extends LitElement {
     const apyPercent = parseFloatNumber(this.apyInput);
     if (apyPercent !== null && apyPercent < 0) {
       this._depositData = null;
-      this._emitDepositChange({ valid: false });
       this._emitLoanSavingsChange({
         valid: false,
         errorMessage: 'APY must be zero or greater.',
@@ -260,7 +257,6 @@ class LoanSavingsCard extends LitElement {
     const parsed = this._buildDepositAccount(apyPercent);
     if (!parsed) {
       this._depositData = null;
-      this._emitDepositChange({ valid: false });
     } else {
       this._depositData = {
         valid: true,
@@ -270,7 +266,6 @@ class LoanSavingsCard extends LitElement {
         depositApy: parsed.depositApy,
         depositAccount: parsed.depositAccount,
       };
-      this._emitDepositChange(this._depositData);
     }
 
     this._calculateCombined();
@@ -392,9 +387,6 @@ class LoanSavingsCard extends LitElement {
       this._updateResults(combined);
       this._emitLoanSavingsChange({
         valid: true,
-        principal: this.principal,
-        mode: modeValue,
-        startDate: normalizedStartDate,
         termMonths: this._loanData.termMonths,
         loanRate: this._loanData.loanRate,
         depositApy: this._depositData.depositApy,
@@ -424,29 +416,9 @@ class LoanSavingsCard extends LitElement {
     this.results = results;
   }
 
-  _emitLoanChange(detail) {
-    this.dispatchEvent(
-      new CustomEvent('loan-change', {
-        detail,
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }
-
   _emitLoanSavingsChange(detail) {
     this.dispatchEvent(
       new CustomEvent('loan-savings-change', {
-        detail,
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }
-
-  _emitDepositChange(detail) {
-    this.dispatchEvent(
-      new CustomEvent('deposit-change', {
         detail,
         bubbles: true,
         composed: true,
