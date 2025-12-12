@@ -2,6 +2,7 @@ import { LitElement, html } from 'lit';
 
 import { TradeoffComparison } from '../tradeoff.js';
 import './loan-savings-card.ui.js';
+import './credit-card-card.ui.js';
 
 import { tradeoffWidgetStyles } from './tradeoff-widget.styles.js';
 
@@ -26,8 +27,6 @@ class TradeoffWidget extends LitElement {
     modeInput: { state: true },
     errorMessage: { state: true },
     metrics: { state: true },
-    ccRewardsRateInput: { state: true },
-    ccRateInput: { state: true },
     currency: { type: String },
     periodDays: { type: Number, attribute: 'period-days' },
   };
@@ -39,13 +38,12 @@ class TradeoffWidget extends LitElement {
     this.modeInput = 'idealized';
     this.errorMessage = '';
     this.metrics = null;
-    this.ccRewardsRateInput = '';
-    this.ccRateInput = '';
     this._currency = 'USD';
     this.periodDays = undefined;
     this._calculator = new TradeoffComparison();
     this._loanData = null;
     this._depositData = null;
+    this._ccData = null;
     this._lastNetValue = undefined;
     this._lastCcRewardsValue = undefined;
     this._lastCcInterestValue = undefined;
@@ -121,6 +119,17 @@ class TradeoffWidget extends LitElement {
     this._calculateIfReady();
   }
 
+  _onCcChange(event) {
+    const detail = event.detail || {};
+    if (!detail.valid) {
+      this._ccData = null;
+      this._calculateIfReady();
+      return;
+    }
+    this._ccData = detail;
+    this._calculateIfReady();
+  }
+
   _calculateIfReady() {
     const modeValue = (this.modeInput || 'idealized').toLowerCase();
     const useRealMode = modeValue === 'real' || modeValue === 'real-world';
@@ -151,32 +160,6 @@ class TradeoffWidget extends LitElement {
       return;
     }
 
-    let ccRewardsPercent = null;
-    if (this.ccRewardsRateInput !== '' && this.ccRewardsRateInput !== undefined) {
-      ccRewardsPercent = this._parseMoney(this.ccRewardsRateInput);
-      if (ccRewardsPercent === null) {
-        this._clearResult();
-        return;
-      }
-      if (ccRewardsPercent < 0) {
-        this._setError('Rewards rate must be zero or greater.');
-        return;
-      }
-    }
-
-    let ccRatePercent = null;
-    if (this.ccRateInput !== '' && this.ccRateInput !== undefined) {
-      ccRatePercent = this._parseMoney(this.ccRateInput);
-      if (ccRatePercent === null) {
-        this._clearResult();
-        return;
-      }
-      if (ccRatePercent < 0) {
-        this._setError('Credit card rate must be zero or greater.');
-        return;
-      }
-    }
-
     let startDate = undefined;
     if (useRealMode) {
       startDate = this._parseDate(this.startDateInput);
@@ -186,8 +169,8 @@ class TradeoffWidget extends LitElement {
       }
     }
 
-    const ccRewardsRate = ccRewardsPercent === null ? 0 : ccRewardsPercent / 100;
-    const ccRate = (ccRatePercent === null ? DEFAULT_CC_RATE_PERCENT : ccRatePercent) / 100;
+    const ccRewardsRate = this._ccData?.valid ? this._ccData.ccRewardsRate : 0;
+    const ccRate = this._ccData?.valid ? this._ccData.ccRate : DEFAULT_CC_RATE_PERCENT / 100;
 
     const scenario = this._calculator.simulateScenario({
       principal,
@@ -334,9 +317,6 @@ class TradeoffWidget extends LitElement {
   }
 
   _renderCards(metrics) {
-    const ccRewardsText = this._formatMaybeCurrency(metrics.cardRewards);
-    const ccInterestText = this._formatMaybeCurrency(metrics.cardInterest);
-
     return html`
       <section class="cards-wrapper">
         <loan-savings-card
@@ -354,59 +334,12 @@ class TradeoffWidget extends LitElement {
           @deposit-change=${this._onDepositChange}
         ></loan-savings-card>
 
-        <article class="option-card card-card">
-          <div class="pill-link">
-            <span class="strategy-pill">Credit Card Strategy</span>
-          </div>
-          <div class="card-heading">
-            <h2>Credit card</h2>
-            <p class="subtitle">Use your credit card.</p>
-          </div>
-
-          <div class="field-group">
-            <p class="group-label">Credit Card Information</p>
-            <div class="field">
-              <label for="ccRate">Credit card APR</label>
-              <input
-                id="ccRate"
-                name="ccRate"
-                type="number"
-                step="0.01"
-                inputmode="decimal"
-                min="0"
-                placeholder="Defaults to 28.99%"
-                .value=${this.ccRateInput}
-                @input=${this._onInput}
-              />
-            </div>
-            <div class="field">
-              <label for="ccRewardsRate">Rewards rate</label>
-              <p class="helper">For this purchase (cash back, points, miles).</p>
-              <input
-                id="ccRewardsRate"
-                name="ccRewardsRate"
-                type="number"
-                step="0.01"
-                inputmode="decimal"
-                min="0"
-                placeholder="e.g. 2"
-                .value=${this.ccRewardsRateInput}
-                @input=${this._onInput}
-              />
-            </div>
-          </div>
-
-          <div class="mini-results">
-            <p>
-              <span class="label">Rewards earned:</span>
-              <span data-role="cc-rewards">${ccRewardsText}</span>
-            </p>
-            <p>
-              <span class="label">Example One Statement Cycle Interest:</span>
-              <span data-role="cc-interest">${ccInterestText}</span>
-            </p>
-          </div>
-        </article>
+        <credit-card-card
+          .principal=${this._principalValue()}
+          .currency=${this.currency}
+          .periodDays=${this.periodDays}
+          @cc-change=${this._onCcChange}
+        ></credit-card-card>
       </section>
     `;
   }
