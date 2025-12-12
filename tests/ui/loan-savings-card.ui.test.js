@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import '../../src/ui/loan-savings-card.ui.js';
+import { TradeoffComparison } from '../../src/tradeoff.js';
 
 const renderCard = async () => {
   const element = document.createElement('loan-savings-card');
@@ -17,6 +18,7 @@ const setValue = (input, value) => {
 describe('loan-savings-card', () => {
   afterEach(() => {
     document.body.innerHTML = '';
+    vi.restoreAllMocks();
   });
 
   it('emits loan and deposit events independently with parsed data', async () => {
@@ -65,20 +67,33 @@ describe('loan-savings-card', () => {
     expect(element.deposit).toBeNull();
   });
 
-  it('renders provided savings results with currency formatting', async () => {
+  it('emits combined loan-savings change with simulated results', async () => {
+    const simulateSpy = vi.spyOn(TradeoffComparison.prototype, 'simulateScenario').mockReturnValue({
+      net: { toDecimal: () => 30 },
+      loanAccount: {
+        payment: () => ({ toDecimal: () => 200 }),
+        totalInterest: () => ({ toDecimal: () => 20 }),
+      },
+      depositAccount: { balance: { toDecimal: () => 30 } },
+    });
+    const combinedListener = vi.fn();
     const element = await renderCard();
     element.principal = 1000;
-    element.results = {
-      depositInterest: 12.5,
-      savingsEndBalance: 1012.5,
-      loanSavingsCost: -3,
-      loanInterest: 5,
-    };
+    element.addEventListener('loan-savings-change', (event) => combinedListener(event.detail));
     await element.updateComplete;
 
     const shadow = element.shadowRoot;
+    setValue(shadow.querySelector('input[name="loanRate"]'), '4');
+    setValue(shadow.querySelector('input[name="termMonths"]'), '12');
+    setValue(shadow.querySelector('input[name="apy"]'), '5');
+    await element.updateComplete;
+
+    expect(simulateSpy).toHaveBeenCalled();
+    expect(combinedListener).toHaveBeenCalled();
+    const detail = combinedListener.mock.calls.at(-1)[0];
+    expect(detail.valid).toBe(true);
+    expect(detail.loanSavingsCost).toBeCloseTo(-30, 2);
     expect(shadow.querySelector('[data-role="deposit-interest"]').textContent).toMatch(/\$/);
-    expect(shadow.querySelector('[data-role="savings-balance"]').textContent).toMatch(/\$/);
     expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/-/);
   });
 });

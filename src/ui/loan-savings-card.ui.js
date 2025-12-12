@@ -2,6 +2,7 @@ import { LitElement, html } from 'lit';
 
 import { Account as DepositAccount } from '../accounts/deposit.js';
 import { Account as LoanAccount } from '../accounts/loan.js';
+import { TradeoffComparison } from '../tradeoff.js';
 
 import { tradeoffWidgetStyles } from './tradeoff-widget.styles.js';
 
@@ -13,6 +14,7 @@ class LoanSavingsCard extends LitElement {
     principal: { type: Number },
     mode: { type: String },
     startDate: { type: String, attribute: 'start-date' },
+    periodDays: { type: Number, attribute: 'period-days' },
     currency: { type: String },
     results: { type: Object },
     loanRateInput: { state: true },
@@ -27,6 +29,7 @@ class LoanSavingsCard extends LitElement {
     this.principal = undefined;
     this.mode = 'idealized';
     this.startDate = '';
+    this.periodDays = undefined;
     this.currency = 'USD';
     this.results = {};
     this.loanRateInput = '';
@@ -34,12 +37,26 @@ class LoanSavingsCard extends LitElement {
     this.apyInput = '';
     this.paymentValue = Number.NaN;
     this.interestValue = Number.NaN;
+    this._calculator = new TradeoffComparison();
+    this._loanData = null;
+    this._depositData = null;
   }
 
   updated(changed) {
-    if (changed.has('principal')) {
+    if (changed.has('periodDays')) {
+      const days = Number.isInteger(this.periodDays) ? this.periodDays : undefined;
+      this._calculator = new TradeoffComparison({ periodDays: days });
+    }
+
+    if (
+      changed.has('principal') ||
+      changed.has('mode') ||
+      changed.has('startDate') ||
+      changed.has('periodDays')
+    ) {
       this._calculateLoan();
       this._calculateDeposit();
+      this._calculateCombined();
     }
   }
 
@@ -212,40 +229,58 @@ class LoanSavingsCard extends LitElement {
     if (!loanAccount) {
       this.paymentValue = Number.NaN;
       this.interestValue = Number.NaN;
+      this._loanData = null;
       this._emitLoanChange({ valid: false });
-      return;
+    } else {
+      this.paymentValue = monthlyPayment;
+      this.interestValue = totalInterest;
+      this._loanData = {
+        valid: true,
+        principal: this.principal,
+        mode: this.mode,
+        startDate: this.startDate,
+        termMonths: loanAccount.periodCount,
+        loanRate: loanAccount.nominalAnnualRate.toDecimal(),
+        loanAccount,
+        monthlyPayment,
+        totalInterest,
+      };
+      this._emitLoanChange(this._loanData);
     }
 
-    this.paymentValue = monthlyPayment;
-    this.interestValue = totalInterest;
-    this._emitLoanChange({
-      valid: true,
-      principal: this.principal,
-      mode: this.mode,
-      startDate: this.startDate,
-      termMonths: loanAccount.periodCount,
-      loanRate: loanAccount.nominalAnnualRate.toDecimal(),
-      loanAccount,
-      monthlyPayment,
-      totalInterest,
-    });
+    this._calculateCombined();
   }
 
   _calculateDeposit() {
-    const parsed = this._buildDepositAccount();
-    if (!parsed) {
+    const apyPercent = this._parseNumber(this.apyInput);
+    if (apyPercent !== null && apyPercent < 0) {
+      this._depositData = null;
       this._emitDepositChange({ valid: false });
+      this._emitLoanSavingsChange({
+        valid: false,
+        errorMessage: 'APY must be zero or greater.',
+      });
+      this._updateResults(null);
       return;
     }
 
-    this._emitDepositChange({
-      valid: true,
-      principal: this.principal,
-      mode: this.mode,
-      startDate: this.startDate,
-      depositApy: parsed.depositApy,
-      depositAccount: parsed.depositAccount,
-    });
+    const parsed = this._buildDepositAccount(apyPercent);
+    if (!parsed) {
+      this._depositData = null;
+      this._emitDepositChange({ valid: false });
+    } else {
+      this._depositData = {
+        valid: true,
+        principal: this.principal,
+        mode: this.mode,
+        startDate: this.startDate,
+        depositApy: parsed.depositApy,
+        depositAccount: parsed.depositAccount,
+      };
+      this._emitDepositChange(this._depositData);
+    }
+
+    this._calculateCombined();
   }
 
   _buildLoanAccount() {
@@ -273,12 +308,11 @@ class LoanSavingsCard extends LitElement {
     }
   }
 
-  _buildDepositAccount() {
+  _buildDepositAccount(apyPercent = this._parseNumber(this.apyInput)) {
     if (!Number.isFinite(this.principal) || this.principal < 0) {
       return null;
     }
 
-    const apyPercent = this._parseNumber(this.apyInput);
     if (apyPercent === null || apyPercent < 0) {
       return null;
     }
@@ -292,9 +326,124 @@ class LoanSavingsCard extends LitElement {
     }
   }
 
+  _calculateCombined() {
+    const modeValue = (this.mode || 'idealized').toLowerCase();
+    const useRealMode = modeValue === 'real' || modeValue === 'real-world';
+
+    if (!this._loanData?.valid || !this._depositData?.valid) {
+      this._updateResults(null);
+      this._emitLoanSavingsChange({ valid: false });
+      return;
+    }
+
+    if (!Number.isFinite(this.principal) || this.principal < 0) {
+      this._updateResults(null);
+      this._emitLoanSavingsChange({
+        valid: false,
+        errorMessage: 'Enter a positive value for the amount.',
+      });
+      return;
+    }
+
+    let normalizedStartDate = undefined;
+    if (useRealMode) {
+      normalizedStartDate = this._validateStartDate(this.startDate);
+      if (!normalizedStartDate) {
+        this._updateResults(null);
+        this._emitLoanSavingsChange({
+          valid: false,
+          errorMessage: 'Select a start date for real world mode.',
+        });
+        return;
+      }
+    }
+
+    try {
+      const scenario = this._calculator.simulateScenario({
+        principal: this.principal,
+        periodCount: this._loanData.termMonths,
+        loanRate: this._loanData.loanRate,
+        depositApy: this._depositData.depositApy,
+        mode: modeValue,
+        startDate: normalizedStartDate,
+      });
+
+      const netValue = scenario?.net?.toDecimal ? scenario.net.toDecimal() : Number.NaN;
+      const loanPaymentAmount = scenario?.loanAccount?.payment?.();
+      const loanPayment = loanPaymentAmount?.toDecimal ? loanPaymentAmount.toDecimal() : Number.NaN;
+      const loanInterestAmount = scenario?.loanAccount?.totalInterest?.();
+      const loanInterest = loanInterestAmount?.toDecimal
+        ? loanInterestAmount.toDecimal()
+        : Number.NaN;
+      const savingsBalanceAmount = scenario?.depositAccount?.balance;
+      const savingsEndBalance = savingsBalanceAmount?.toDecimal
+        ? savingsBalanceAmount.toDecimal()
+        : Number.NaN;
+      const depositInterest =
+        Number.isFinite(netValue) && Number.isFinite(loanInterest)
+          ? netValue + loanInterest
+          : Number.NaN;
+      const loanSavingsCost =
+        Number.isFinite(netValue) && Number.isFinite(loanInterest)
+          ? loanInterest - depositInterest
+          : Number.NaN;
+
+      const combined = {
+        loanPayment,
+        loanInterest,
+        depositInterest,
+        savingsEndBalance,
+        loanSavingsCost,
+        netValue,
+      };
+      this._updateResults(combined);
+      this._emitLoanSavingsChange({
+        valid: true,
+        principal: this.principal,
+        mode: modeValue,
+        startDate: normalizedStartDate,
+        termMonths: this._loanData.termMonths,
+        loanRate: this._loanData.loanRate,
+        depositApy: this._depositData.depositApy,
+        ...combined,
+        loanAccount: scenario.loanAccount,
+        depositAccount: scenario.depositAccount,
+      });
+    } catch (error) {
+      this._updateResults(null);
+      this._emitLoanSavingsChange({
+        valid: false,
+        errorMessage: error?.message,
+      });
+    }
+  }
+
+  _updateResults(results) {
+    if (!results) {
+      this.results = {
+        depositInterest: Number.NaN,
+        savingsEndBalance: Number.NaN,
+        loanSavingsCost: Number.NaN,
+        loanInterest: Number.NaN,
+      };
+      return;
+    }
+    this.results = results;
+  }
+
   _emitLoanChange(detail) {
     this.dispatchEvent(
       new CustomEvent('loan-change', {
+        detail,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  _emitLoanSavingsChange(detail) {
+    this.dispatchEvent(
+      new CustomEvent('loan-savings-change', {
         detail,
         bubbles: true,
         composed: true,
@@ -326,6 +475,24 @@ class LoanSavingsCard extends LitElement {
     }
     const parsed = Number.parseInt(String(value).trim(), 10);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  _validateStartDate(value) {
+    if (!value) {
+      return null;
+    }
+
+    const normalized = String(value).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+      return null;
+    }
+
+    const parsed = new Date(normalized);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return normalized;
   }
 
   _formatMaybeCurrency(value, { fallback = '—', sign = false } = {}) {

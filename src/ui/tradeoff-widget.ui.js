@@ -1,6 +1,5 @@
 import { LitElement, html } from 'lit';
 
-import { TradeoffComparison } from '../tradeoff.js';
 import './loan-savings-card.ui.js';
 import './credit-card-card.ui.js';
 
@@ -40,21 +39,8 @@ class TradeoffWidget extends LitElement {
     this.metrics = null;
     this._currency = 'USD';
     this.periodDays = undefined;
-    this._calculator = new TradeoffComparison();
-    this._loanData = null;
-    this._depositData = null;
+    this._loanSavingsData = null;
     this._ccData = null;
-    this._lastNetValue = undefined;
-    this._lastCcRewardsValue = undefined;
-    this._lastCcInterestValue = undefined;
-  }
-
-  updated(changed) {
-    if (changed.has('periodDays')) {
-      const days = Number.isFinite(this.periodDays) ? this.periodDays : undefined;
-      this._calculator = new TradeoffComparison({ periodDays: days });
-      this._calculateIfReady();
-    }
   }
 
   get currency() {
@@ -73,7 +59,7 @@ class TradeoffWidget extends LitElement {
 
     return html`
       <article class="tradeoff-shell">
-        ${this._renderIntro()} ${this._renderGlobalInputs()} ${this._renderCards(metrics)}
+        ${this._renderIntro()} ${this._renderGlobalInputs()} ${this._renderCards()}
         ${this._renderSummary(metrics)}
         <p class="error" data-role="error" role="alert">${this.errorMessage}</p>
       </article>
@@ -94,152 +80,88 @@ class TradeoffWidget extends LitElement {
     if (value === '') {
       this._clearResult();
     }
-    this._calculateIfReady();
-  }
-
-  _onLoanChange(event) {
-    const detail = event.detail || {};
-    if (!detail.valid) {
-      this._loanData = null;
-      this._calculateIfReady();
+    if (name === 'principal') {
+      const parsed = this._parseMoney(value);
+      if (parsed === null) {
+        return;
+      }
+      if (parsed < 0) {
+        this._setError('Enter a positive value for the amount.');
+        return;
+      }
+      this.errorMessage = '';
       return;
     }
-    this._loanData = detail;
-    this._calculateIfReady();
-  }
-
-  _onDepositChange(event) {
-    const detail = event.detail || {};
-    if (!detail.valid) {
-      this._depositData = null;
-      this._calculateIfReady();
-      return;
+    if (name === 'startDate' || name === 'mode') {
+      if (this.modeInput === 'real' || this.modeInput === 'real-world') {
+        const parsedDate = this._parseDate(this.startDateInput);
+        if (parsedDate === null) {
+          return;
+        }
+      }
+      this.errorMessage = '';
     }
-    this._depositData = detail;
-    this._calculateIfReady();
   }
 
   _onCcChange(event) {
     const detail = event.detail || {};
     if (!detail.valid) {
       this._ccData = null;
-      this._calculateIfReady();
+      this._updateMetrics();
       return;
     }
     this._ccData = detail;
-    this._calculateIfReady();
+    this._updateMetrics();
   }
 
-  _calculateIfReady() {
-    const modeValue = (this.modeInput || 'idealized').toLowerCase();
-    const useRealMode = modeValue === 'real' || modeValue === 'real-world';
-
-    const principal = this._parseMoney(this.principalInput);
-    if (principal === null) {
-      this._clearResult();
-      return;
-    }
-    if (principal < 0) {
-      this._setError('Enter a positive value for the amount.');
-      return;
-    }
-
-    if (!this._loanData || !this._loanData.valid) {
-      this._clearResult();
-      return;
-    }
-    const { termMonths, loanRate } = this._loanData;
-
-    if (!this._depositData || !this._depositData.valid) {
-      this._clearResult();
-      return;
-    }
-    const { depositApy } = this._depositData;
-    if (!Number.isFinite(depositApy) || depositApy < 0) {
-      this._setError('APY must be zero or greater.');
-      return;
-    }
-
-    let startDate = undefined;
-    if (useRealMode) {
-      startDate = this._parseDate(this.startDateInput);
-      if (startDate === null) {
-        this._clearResult();
-        return;
+  _onLoanSavingsChange(event) {
+    const detail = event.detail || {};
+    if (!detail.valid) {
+      this._loanSavingsData = null;
+      if (detail.errorMessage) {
+        this._setError(detail.errorMessage);
       }
+      this._updateMetrics();
+      return;
     }
+    this.errorMessage = '';
+    this._loanSavingsData = detail;
+    this._updateMetrics();
+  }
 
-    const ccRewardsRate = this._ccData?.valid ? this._ccData.ccRewardsRate : 0;
-    const ccRate = this._ccData?.valid ? this._ccData.ccRate : DEFAULT_CC_RATE_PERCENT / 100;
-
-    const scenario = this._calculator.simulateScenario({
-      principal,
-      periodCount: termMonths,
-      loanRate,
-      depositApy,
-      ccRewardsRate,
-      ccRate,
-      mode: modeValue,
-      startDate,
-    });
-
-    const netValue = scenario?.net?.toDecimal ? scenario.net.toDecimal() : Number.NaN;
-    this._lastNetValue = Number.isFinite(netValue) ? netValue : undefined;
-    const ccRewardsValue = scenario?.creditCardRewards?.toDecimal
-      ? scenario.creditCardRewards.toDecimal()
-      : Number.NaN;
-    const ccInterestValue = scenario?.creditCardInterest?.toDecimal
-      ? scenario.creditCardInterest.toDecimal()
-      : Number.NaN;
-    this._lastCcRewardsValue = Number.isFinite(ccRewardsValue) ? ccRewardsValue : undefined;
-    this._lastCcInterestValue = Number.isFinite(ccInterestValue) ? ccInterestValue : undefined;
-
-    const loanPaymentAmount = scenario?.loanAccount?.payment?.();
-    const loanPayment = loanPaymentAmount?.toDecimal ? loanPaymentAmount.toDecimal() : Number.NaN;
-    const loanInterestAmount = scenario?.loanAccount?.totalInterest?.();
-    const loanInterest = loanInterestAmount?.toDecimal
-      ? loanInterestAmount.toDecimal()
-      : Number.NaN;
-    const savingsBalanceAmount = scenario?.depositAccount?.balance;
-    const savingsEndBalance = savingsBalanceAmount?.toDecimal
-      ? savingsBalanceAmount.toDecimal()
-      : Number.NaN;
-    const depositInterest =
-      Number.isFinite(netValue) && Number.isFinite(loanInterest)
-        ? netValue + loanInterest
-        : Number.NaN;
-    const loanSavingsCost =
-      Number.isFinite(netValue) && Number.isFinite(loanInterest)
-        ? loanInterest - depositInterest
-        : Number.NaN;
+  _updateMetrics() {
+    const loanSavings = this._loanSavingsData?.valid ? this._loanSavingsData : null;
+    const ccData = this._ccData?.valid ? this._ccData : null;
+    const cardRewardsValue = ccData?.rewardsValue ?? Number.NaN;
+    const cardInterestValue = ccData?.interestValue ?? Number.NaN;
     const cardNetCost =
-      Number.isFinite(ccInterestValue) && Number.isFinite(ccRewardsValue)
-        ? ccInterestValue - ccRewardsValue
+      Number.isFinite(cardInterestValue) && Number.isFinite(cardRewardsValue)
+        ? cardInterestValue - cardRewardsValue
         : Number.NaN;
 
     this.metrics = {
-      loanPayment,
-      loanInterest,
-      depositInterest,
-      savingsEndBalance,
-      loanSavingsCost,
-      cardRewards: ccRewardsValue,
-      cardInterest: ccInterestValue,
+      loanPayment: loanSavings?.loanPayment ?? Number.NaN,
+      loanInterest: loanSavings?.loanInterest ?? Number.NaN,
+      depositInterest: loanSavings?.depositInterest ?? Number.NaN,
+      savingsEndBalance: loanSavings?.savingsEndBalance ?? Number.NaN,
+      loanSavingsCost: loanSavings?.loanSavingsCost ?? Number.NaN,
+      cardRewards: cardRewardsValue,
+      cardInterest: cardInterestValue,
       cardNetCost,
     };
 
     this._emitChange({
-      principal,
-      termMonths,
-      loanRate,
-      depositApy,
-      ccRewardsRate,
-      ccRate,
-      mode: modeValue,
-      startDate,
-      netValue,
-      creditCardRewards: ccRewardsValue,
-      creditCardInterest: ccInterestValue,
+      principal: loanSavings?.principal ?? null,
+      termMonths: loanSavings?.termMonths,
+      loanRate: loanSavings?.loanRate,
+      depositApy: loanSavings?.depositApy,
+      ccRewardsRate: ccData?.ccRewardsRate,
+      ccRate: ccData?.ccRate ?? DEFAULT_CC_RATE_PERCENT / 100,
+      mode: loanSavings?.mode ?? this.modeInput,
+      startDate: loanSavings?.startDate,
+      netValue: loanSavings?.netValue,
+      creditCardRewards: cardRewardsValue,
+      creditCardInterest: cardInterestValue,
     });
   }
 
@@ -316,7 +238,7 @@ class TradeoffWidget extends LitElement {
     `;
   }
 
-  _renderCards(metrics) {
+  _renderCards() {
     return html`
       <section class="cards-wrapper">
         <loan-savings-card
@@ -324,14 +246,8 @@ class TradeoffWidget extends LitElement {
           .mode=${this.modeInput}
           .startDate=${this.startDateInput}
           .currency=${this.currency}
-          .results=${{
-            depositInterest: metrics.depositInterest,
-            savingsEndBalance: metrics.savingsEndBalance,
-            loanSavingsCost: metrics.loanSavingsCost,
-            loanInterest: metrics.loanInterest,
-          }}
-          @loan-change=${this._onLoanChange}
-          @deposit-change=${this._onDepositChange}
+          .periodDays=${this.periodDays}
+          @loan-savings-change=${this._onLoanSavingsChange}
         ></loan-savings-card>
 
         <credit-card-card
@@ -377,9 +293,8 @@ class TradeoffWidget extends LitElement {
   }
 
   _clearResult() {
-    this._lastNetValue = undefined;
-    this._lastCcRewardsValue = undefined;
-    this._lastCcInterestValue = undefined;
+    this._loanSavingsData = null;
+    this._ccData = null;
     this.metrics = null;
   }
 
@@ -399,23 +314,6 @@ class TradeoffWidget extends LitElement {
     }
     const parsed = Number.parseFloat(normalized);
     if (!Number.isFinite(parsed)) {
-      this._setError('Enter a numeric value.');
-      return null;
-    }
-    return parsed;
-  }
-
-  _parseInteger(value) {
-    if (value === '' || value === undefined || value === null) {
-      return null;
-    }
-    const normalized = String(value).trim();
-    if (!/^-?\d+$/.test(normalized)) {
-      this._setError('Enter a numeric value.');
-      return null;
-    }
-    const parsed = Number.parseInt(normalized, 10);
-    if (Number.isNaN(parsed)) {
       this._setError('Enter a numeric value.');
       return null;
     }

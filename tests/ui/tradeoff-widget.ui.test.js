@@ -61,8 +61,6 @@ describe('tradeoff-widget', () => {
       periodCount: 12,
       depositApy: 0.05,
       loanRate: 0.04,
-      ccRewardsRate: 0.015,
-      ccRate: 0.2899,
     });
 
     expect(loanSavingsShadow.querySelector('[data-role="loan-payment"]').textContent).toMatch(/\$/);
@@ -109,21 +107,12 @@ describe('tradeoff-widget', () => {
   });
 
   it('defaults the credit card rate when left empty', async () => {
-    const simulateSpy = vi.spyOn(TradeoffComparison.prototype, 'simulateScenario').mockReturnValue({
-      net: { toDecimal: () => 0 },
-      creditCardRewards: { toDecimal: () => 0 },
-      creditCardInterest: { toDecimal: () => 0 },
-      loanAccount: {
-        payment: () => ({ toDecimal: () => 0 }),
-        totalInterest: () => ({ toDecimal: () => 0 }),
-      },
-      depositAccount: { balance: { toDecimal: () => 0 } },
-    });
-
     const element = await renderWidget();
     const shadow = element.shadowRoot;
     const loanSavingsShadow = getLoanSavingsShadow(shadow);
     const creditCardShadow = getCreditCardShadow(shadow);
+    const ccListener = vi.fn();
+    creditCardShadow.host.addEventListener('cc-change', (event) => ccListener(event.detail));
 
     setValue(shadow.querySelector('input[name="principal"]'), '300');
     setValue(loanSavingsShadow.querySelector('input[name="termMonths"]'), '3');
@@ -132,10 +121,10 @@ describe('tradeoff-widget', () => {
     setValue(creditCardShadow.querySelector('input[name="ccRewardsRate"]'), '2');
     await loanSavingsShadow.host.updateComplete;
     await creditCardShadow.host.updateComplete;
-    await element.updateComplete;
 
-    const lastCallArgs = simulateSpy.mock.calls.at(-1)[0];
-    expect(lastCallArgs.ccRate).toBeCloseTo(0.2899, 4);
+    expect(ccListener).toHaveBeenCalled();
+    const ccDetail = ccListener.mock.calls.at(-1)[0];
+    expect(ccDetail.ccRate).toBeCloseTo(0.2899, 4);
   });
 
   it('clears the result when an input is emptied after a valid calculation', async () => {
