@@ -2,12 +2,9 @@ import { LitElement, html } from 'lit';
 
 import './loan-savings-card.ui.js';
 import './credit-card-card.ui.js';
-
+import { formatMaybeCurrency } from './formatting.ui.js';
 import { tradeoffWidgetStyles } from './tradeoff-widget.styles.js';
 
-const currencyFormatter = (value, currency = 'USD') =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
-const DEFAULT_CC_RATE_PERCENT = 28.99;
 const EMPTY_METRICS = Object.freeze({
   loanPayment: Number.NaN,
   loanInterest: Number.NaN,
@@ -152,11 +149,7 @@ class TradeoffWidget extends LitElement {
 
     this._emitChange({
       principal: loanSavings?.principal ?? null,
-      termMonths: loanSavings?.termMonths,
-      loanRate: loanSavings?.loanRate,
       depositApy: loanSavings?.depositApy,
-      ccRewardsRate: ccData?.ccRewardsRate,
-      ccRate: ccData?.ccRate ?? DEFAULT_CC_RATE_PERCENT / 100,
       mode: loanSavings?.mode ?? this.modeInput,
       startDate: loanSavings?.startDate,
       netValue: loanSavings?.netValue,
@@ -261,13 +254,10 @@ class TradeoffWidget extends LitElement {
   }
 
   _renderSummary(metrics) {
-    const loanInterestText = this._formatMaybeCurrency(metrics.loanInterest);
-    const loanSavingsCostText = this._formatMaybeCurrency(metrics.loanSavingsCost, {
-      fallback: '—',
-      sign: true,
-    });
-    const ccRewardsText = this._formatMaybeCurrency(metrics.cardRewards);
-    const ccInterestText = this._formatMaybeCurrency(metrics.cardInterest);
+    const loanInterestText = formatMaybeCurrency(metrics.loanInterest, this.currency);
+    const loanSavingsCostText = formatMaybeCurrency(metrics.loanSavingsCost, this.currency);
+    const ccRewardsText = formatMaybeCurrency(metrics.cardRewards, this.currency);
+    const ccInterestText = formatMaybeCurrency(metrics.cardInterest, this.currency);
 
     return html`
       <section class="solar-card summary-card">
@@ -339,61 +329,6 @@ class TradeoffWidget extends LitElement {
     }
 
     return normalized;
-  }
-
-  _formatCurrency(amount) {
-    try {
-      return currencyFormatter(amount, this.currency);
-    } catch {
-      return currencyFormatter(amount, 'USD');
-    }
-  }
-
-  _formatMaybeCurrency(value, { fallback = '—', sign = false } = {}) {
-    if (!Number.isFinite(value)) {
-      return fallback;
-    }
-    const formatted = this._formatCurrency(Math.abs(value));
-    if (!sign) {
-      return formatted;
-    }
-    return value < 0 ? `-${formatted}` : formatted;
-  }
-
-  _buildCostRanking(metrics = {}) {
-    const candidates = [
-      { key: 'loanSavings', label: 'Loan + savings', cost: metrics.loanSavingsCost },
-      { key: 'cash', label: 'Pay cash now', cost: 0 },
-      { key: 'plainLoan', label: 'Plain loan', cost: metrics.loanInterest },
-      { key: 'creditCard', label: 'Credit card', cost: metrics.cardNetCost },
-    ].filter(({ cost }) => Number.isFinite(cost));
-
-    return candidates.sort((a, b) => a.cost - b.cost);
-  }
-
-  _buildHeadline(recommended) {
-    if (!recommended || !Number.isFinite(recommended.cost)) {
-      return 'Recommended strategy: fill in the numbers to see your best path.';
-    }
-
-    if (recommended.key === 'cash' && recommended.cost === 0) {
-      return 'Recommended strategy: Paying cash now is the baseline cost.';
-    }
-
-    const differenceFromCash = recommended.cost;
-    if (differenceFromCash < 0) {
-      return `Recommended strategy: ${recommended.label} saves you ${this._formatCurrency(
-        Math.abs(differenceFromCash),
-      )} versus paying cash now.`;
-    }
-
-    if (differenceFromCash === 0) {
-      return `Recommended strategy: ${recommended.label} roughly matches paying cash now.`;
-    }
-
-    return `Recommended strategy: ${recommended.label} costs ${this._formatCurrency(
-      differenceFromCash,
-    )} more than paying cash now.`;
   }
 
   _chipTone(item, best) {

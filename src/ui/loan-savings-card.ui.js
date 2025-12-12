@@ -4,10 +4,8 @@ import { Account as DepositAccount } from '../accounts/deposit.js';
 import { Account as LoanAccount } from '../accounts/loan.js';
 import { TradeoffComparison } from '../tradeoff.js';
 
+import { parseFloatNumber, formatMaybeCurrency } from './formatting.ui.js';
 import { tradeoffWidgetStyles } from './tradeoff-widget.styles.js';
-
-const currencyFormatter = (value, currency = 'USD') =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
 
 class LoanSavingsCard extends LitElement {
   static properties = {
@@ -61,16 +59,11 @@ class LoanSavingsCard extends LitElement {
   }
 
   render() {
-    const paymentText = this._formatMaybeCurrency(this.paymentValue);
-    const interestText = this._formatMaybeCurrency(this.interestValue);
-    const savingsInterestText = this._formatMaybeCurrency(this.results?.depositInterest);
-    const savingsBalanceText = this._formatMaybeCurrency(this.results?.savingsEndBalance, {
-      fallback: '—',
-    });
-    const loanSavingsCostText = this._formatMaybeCurrency(this.results?.loanSavingsCost, {
-      fallback: '—',
-      sign: true,
-    });
+    const paymentText = formatMaybeCurrency(this.paymentValue, this.currency);
+    const interestText = formatMaybeCurrency(this.interestValue, this.currency);
+    const savingsInterestText = formatMaybeCurrency(this.results?.depositInterest, this.currency);
+    const savingsBalanceText = formatMaybeCurrency(this.results?.savingsEndBalance, this.currency);
+    const loanSavingsCostText = formatMaybeCurrency(this.results?.loanSavingsCost, this.currency);
 
     return html`
       <div class="loan-savings-grid">
@@ -252,7 +245,7 @@ class LoanSavingsCard extends LitElement {
   }
 
   _calculateDeposit() {
-    const apyPercent = this._parseNumber(this.apyInput);
+    const apyPercent = parseFloatNumber(this.apyInput);
     if (apyPercent !== null && apyPercent < 0) {
       this._depositData = null;
       this._emitDepositChange({ valid: false });
@@ -289,7 +282,7 @@ class LoanSavingsCard extends LitElement {
     }
 
     const termMonths = this._parseInteger(this.termMonthsInput);
-    const ratePercent = this._parseNumber(this.loanRateInput);
+    const ratePercent = parseFloatNumber(this.loanRateInput);
     if (termMonths === null || ratePercent === null) {
       return null;
     }
@@ -308,7 +301,7 @@ class LoanSavingsCard extends LitElement {
     }
   }
 
-  _buildDepositAccount(apyPercent = this._parseNumber(this.apyInput)) {
+  _buildDepositAccount(apyPercent = parseFloatNumber(this.apyInput)) {
     if (!Number.isFinite(this.principal) || this.principal < 0) {
       return null;
     }
@@ -461,14 +454,6 @@ class LoanSavingsCard extends LitElement {
     );
   }
 
-  _parseNumber(value) {
-    if (value === '' || value === undefined || value === null) {
-      return null;
-    }
-    const parsed = Number.parseFloat(String(value).trim());
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
   _parseInteger(value) {
     if (value === '' || value === undefined || value === null) {
       return null;
@@ -493,20 +478,6 @@ class LoanSavingsCard extends LitElement {
     }
 
     return normalized;
-  }
-
-  _formatMaybeCurrency(value, { fallback = '—', sign = false } = {}) {
-    if (!Number.isFinite(value)) {
-      return fallback;
-    }
-    const formatted = (() => {
-      try {
-        return currencyFormatter(Math.abs(value), this.currency);
-      } catch {
-        return currencyFormatter(Math.abs(value), 'USD');
-      }
-    })();
-    return sign && value < 0 ? `-${formatted}` : formatted;
   }
 
   static styles = tradeoffWidgetStyles;

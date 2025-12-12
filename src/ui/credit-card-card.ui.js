@@ -2,11 +2,10 @@ import { LitElement, html } from 'lit';
 
 import { Account as CreditCardAccount } from '../accounts/credit-card.js';
 
+import { parseFloatNumber, formatMaybeCurrency } from './formatting.ui.js';
 import { tradeoffWidgetStyles } from './tradeoff-widget.styles.js';
 
 const DEFAULT_CC_RATE_PERCENT = 28.99;
-const currencyFormatter = (value, currency = 'USD') =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
 
 class CreditCardCard extends LitElement {
   static properties = {
@@ -37,8 +36,8 @@ class CreditCardCard extends LitElement {
   }
 
   render() {
-    const rewardsText = this._formatMaybeCurrency(this.rewardsValue);
-    const interestText = this._formatMaybeCurrency(this.interestValue);
+    const rewardsText = formatMaybeCurrency(this.rewardsValue, this.currency);
+    const interestText = formatMaybeCurrency(this.interestValue, this.currency);
 
     return html`
       <article class="option-card card-card">
@@ -135,8 +134,8 @@ class CreditCardCard extends LitElement {
       return null;
     }
 
-    const rewardsPercent = this._parseNumber(this.ccRewardsRateInput);
-    const ccRatePercent = this._parseNumber(this.ccRateInput);
+    const rewardsPercent = parseFloatNumber(this.ccRewardsRateInput);
+    const ccRatePercent = parseFloatNumber(this.ccRateInput);
     if (
       (rewardsPercent !== null && rewardsPercent < 0) ||
       (ccRatePercent !== null && ccRatePercent < 0)
@@ -177,25 +176,6 @@ class CreditCardCard extends LitElement {
         composed: true,
       }),
     );
-  }
-
-  _parseNumber(value) {
-    if (value === '' || value === undefined || value === null) {
-      return null;
-    }
-    const parsed = Number.parseFloat(String(value).trim());
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  _formatMaybeCurrency(value, { fallback = '—' } = {}) {
-    if (!Number.isFinite(value)) {
-      return fallback;
-    }
-    try {
-      return currencyFormatter(Math.abs(value), this.currency);
-    } catch {
-      return currencyFormatter(Math.abs(value), 'USD');
-    }
   }
 
   static styles = tradeoffWidgetStyles;
