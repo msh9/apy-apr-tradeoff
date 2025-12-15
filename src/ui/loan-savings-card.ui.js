@@ -66,7 +66,7 @@ class LoanSavingsCard extends LitElement {
     const loanSavingsCostText = formatMaybeCurrency(this.results?.loanSavingsCost, this.currency);
 
     return html`
-        <article class="option-card loan-card">
+        <div class="option-card loan-card">
           <div class="pill-link">
             <span class="strategy-pill">Loan + Savings Strategy</span>
           </div>
@@ -121,9 +121,9 @@ class LoanSavingsCard extends LitElement {
               <span data-role="loan-interest">${interestText}</span>
             </p>
           </div>
-        </article>
+        </div>
 
-        <article class="option-card savings-card">
+        <div class="option-card savings-card">
           <div class="pill-link">
             <span class="strategy-pill">Loan + Savings Strategy</span>
           </div>
@@ -174,7 +174,7 @@ class LoanSavingsCard extends LitElement {
                   </p>
                 `}
           </div>
-        </article>
+        </div>
     `;
   }
 

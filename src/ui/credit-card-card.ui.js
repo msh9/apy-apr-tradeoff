@@ -40,7 +40,7 @@ class CreditCardCard extends LitElement {
     const interestText = formatMaybeCurrency(this.interestValue, this.currency);
 
     return html`
-      <article class="option-card card-card">
+      <div class="option-card card-card">
         <div class="pill-link">
           <span class="strategy-pill">Credit Card Strategy</span>
         </div>
@@ -92,7 +92,7 @@ class CreditCardCard extends LitElement {
             <span data-role="cc-interest">${interestText}</span>
           </p>
         </div>
-      </article>
+      </div>
     `;
   }
 

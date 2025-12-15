@@ -2,8 +2,8 @@ import { css } from 'lit';
 
 const tradeoffWidgetStyles = css`
   :host {
-    display: block;
-    --base03: #002b36;
+    display: inherit;
+    --base04: #002b36;
     --base02: #073642;
     --base01: #586e75;
     --base00: #657b83;
@@ -66,11 +66,8 @@ const tradeoffWidgetStyles = css`
   }
 
   .cards-wrapper {
-
-  }
-
-  .cards-wrapper > * {
-    min-width: 0;
+    display: flex;
+    flex-flow: row wrap;
   }
 
   .loan-savings-grid {
@@ -124,6 +121,10 @@ const tradeoffWidgetStyles = css`
     letter-spacing: 0.1px;
     text-align: center;
     flex: 1 1 auto;
+  }
+
+  .card-card .strategy-pill  {
+    background: var(--violet); 
   }
 
   .card-heading h2 {
