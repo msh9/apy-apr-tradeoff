@@ -3,6 +3,9 @@ import { css } from 'lit';
 const tradeoffWidgetStyles = css`
   :host {
     display: inherit;
+    gap: inherit;
+    flex-flow: inherit;
+    flex: inherit;
     --base04: #002b36;
     --base02: #073642;
     --base01: #586e75;
@@ -26,8 +29,8 @@ const tradeoffWidgetStyles = css`
     gap: 18px;
     color: var(--base0);
     background: var(--base03);
-    padding: 18px;
-    border-radius: 14px;
+    padding: 1rem;
+    border-radius: .5rem;
     border: 1px solid var(--base02);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
   }
@@ -49,8 +52,8 @@ const tradeoffWidgetStyles = css`
   .solar-card {
     background: var(--base02);
     border: 1px solid var(--base01);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: .5rem;
+    padding: 1rem;
   }
 
   .global-card {
@@ -68,22 +71,26 @@ const tradeoffWidgetStyles = css`
   .cards-wrapper {
     display: flex;
     flex-flow: row wrap;
+    gap: .5rem;
+    flex: 1 1 0;
   }
 
   .loan-savings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
+    gap: 1rem;
   }
 
   .option-card {
     background: var(--base02);
     border: 1px solid var(--base01);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: .5rem;
+    padding: 1rem;
     display: grid;
-    gap: 10px;
-    min-height: 100%;
+    align-items: start;
+    align-content: start;
+    gap: .5rem;
+    flex: 1 1 0;
   }
 
   .loan-card {
@@ -206,8 +213,8 @@ const tradeoffWidgetStyles = css`
 
   .mini-results {
     background: rgba(255, 255, 255, 0.02);
-    border-radius: 10px;
-    padding: 10px;
+    border-radius: .5rem;
+    padding: 1rem;
     display: grid;
     gap: 6px;
     border: 1px solid var(--base01);
