@@ -161,8 +161,8 @@ class Account {
         });
         this.#balance = this.#balance.addTo(postedInterest);
         this.#interestAccrued = this.#interestAccrued.addTo(postedInterest);
-        // Drop fractional cents that were not posted; the next month starts fresh.
-        this.#pendingInterest = new Amount(0);
+        // Maintain fractional cents that were not posted
+        this.#pendingInterest = this.#pendingInterest.subtractFrom(postedInterest);
       }
 
       currentDate = addDays(currentDate, 1);

@@ -120,6 +120,15 @@ describe('deposit Account', () => {
       expect(account.balance.toDecimal()).toBeCloseTo(1000 + expectedPosted, 2);
     });
 
+    it('accumulates across months while posting at month end', () => {
+      const account = new Account(2349.99, 0.042);
+
+      account.accrueForDaysWithMonthlyPosting(30, '2025-09-22');
+      const expectedPosted = 2349.99 * ((1.042) ** (9 / 365) - 1);
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(expectedPosted, 2);
+      expect(account.balance.toDecimal()).toBeCloseTo(2349.99 + expectedPosted, 2);
+    });
+
     it('throws on invalid start dates and negative spans', () => {
       const account = new Account(500, 0.02);
 

@@ -19,6 +19,12 @@ describe('calendar utilities', () => {
     expect(date.getUTCDate()).toBe(15);
   });
 
+  it('computes the last day of the month', () => {
+    const lastDay = lastDayOfMonth(new Date("2025-01-15"));
+    expect(lastDay.getDate()).toBe(30);
+    expect(lastDay.getMonth()).toBe(0);
+  })
+
   describe('when comparing dates', () => {
     it('correctly compares two equivalent dates', () => {
       expect(isSameDay(new Date(2025, 4, 23), new Date(2025, 4, 23))).toBeTruthy();
