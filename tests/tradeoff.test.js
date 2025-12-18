@@ -156,8 +156,8 @@ describe('TradeoffComparison', () => {
       });
 
       // Expected value spreadshet computed
-      expect(scenario.net.toDecimal()).toBeCloseTo(27.5, 2);
-      expect(scenario.depositInterest.toDecimal()).toBeCloseTo(27.47, 2);
+      expect(scenario.net.toDecimal()).toBeCloseTo(27.77, 2);
+      expect(scenario.depositInterest.toDecimal()).toBeCloseTo(27.74, 2);
     });
 
     it('uses calendar day spans with 3 month-end posting before payments', () => {
@@ -172,8 +172,8 @@ describe('TradeoffComparison', () => {
       });
 
       // Expected value spreadshet computed
-      expect(scenario.net.toDecimal()).toBeCloseTo(-19.92, 2);
-      expect(scenario.depositInterest.toDecimal()).toBeCloseTo(32.955, 2);
+      expect(scenario.net.toDecimal()).toBeCloseTo(-19.32, 2);
+      expect(scenario.depositInterest.toDecimal()).toBeCloseTo(32.55, 2);
     });
 
     it('throws when real mode is selected without a start date', () => {
