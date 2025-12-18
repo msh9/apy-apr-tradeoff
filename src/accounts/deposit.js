@@ -134,11 +134,9 @@ class Account {
    * This mirrors common consumer deposit behavior where daily interest is not immediately available.
    * @param {number} days Number of days to accrue over
    * @param {Date|string|number} startDate Starting calendar date used to find month boundaries
-   * @param {object} [options]
-   * @param {function} [options.isMonthEnd] Optional predicate receiving a Date to determine month-end
    * @returns {Account} This account updated by the accrual
    */
-  accrueForDaysWithMonthlyPosting(days, startDate, { isMonthEnd } = {}) {
+  accrueForDaysWithMonthlyPosting(days, startDate) {
     if (!Number.isInteger(days)) {
       throw new Error('Days must be an integer number');
     }
@@ -148,25 +146,22 @@ class Account {
     if (days === 0) {
       return this;
     }
-
-    const monthEndCheck =
-      typeof isMonthEnd === 'function'
-        ? isMonthEnd
-        : (date) => isSameDay(date, lastDayOfMonth(date));
-
     let currentDate = normalizeDate(startDate);
 
     for (let i = 0; i < days; i += 1) {
-      const dailyInterest = this.#balance.multiplyBy(this.#dailyRate);
+      // Daily compounding: accrue interest on both the posted balance and any unposted (pending) interest.
+      const effectiveBalance = this.#balance.addTo(this.#pendingInterest);
+      const dailyInterest = effectiveBalance.multiplyBy(this.#dailyRate);
       this.#pendingInterest = this.#pendingInterest.addTo(dailyInterest);
 
-      if (monthEndCheck(currentDate)) {
+      if (isSameDay(currentDate, lastDayOfMonth(currentDate))) {
         const postedInterest = this.#pendingInterest.addTo(new Amount(0), {
           roundingMode: 'bankers',
           decimalPlaces: 2,
         });
         this.#balance = this.#balance.addTo(postedInterest);
         this.#interestAccrued = this.#interestAccrued.addTo(postedInterest);
+        // Drop fractional cents that were not posted; the next month starts fresh.
         this.#pendingInterest = new Amount(0);
       }
 
