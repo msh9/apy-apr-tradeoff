@@ -23,6 +23,7 @@ class Account {
   #balance;
   #dailyRate;
   #pendingInterest;
+  #interestAccrued;
   /**
    * "Opens" an account with a opening balance and the percentage yield to be used for subsequent calculations.
    *  Values may be specified as numbers of as Amounts. Values provided as JS numbers will be converted to Amounts
@@ -34,6 +35,7 @@ class Account {
     this.#balance = new Amount(openingBalance);
     this.#apy = new Amount(apy);
     this.#pendingInterest = new Amount(0);
+    this.#interestAccrued = new Amount(0);
 
     const one = new Amount(1);
     this.#dailyRate = one.addTo(this.#apy).nthRoot(financialCalendar.daysInYear).subtractFrom(one);
@@ -53,6 +55,14 @@ class Account {
    */
   get balance() {
     return this.#balance;
+  }
+
+  /**
+   * Returns the total interest credited to the account as an Amount
+   * @property {Amount} interestAccrued
+   */
+  get interestAccrued() {
+    return this.#interestAccrued;
   }
 
   /**
@@ -108,10 +118,13 @@ class Account {
       );
     }
 
-    this.#balance = this.#balance.addTo(accruingBalance, {
+    const updatedBalance = this.#balance.addTo(accruingBalance, {
       roundingMode: 'bankers',
       decimalPlaces: 2,
     });
+    const postedInterest = updatedBalance.subtractFrom(this.#balance);
+    this.#balance = updatedBalance;
+    this.#interestAccrued = this.#interestAccrued.addTo(postedInterest);
 
     return this;
   }
@@ -153,6 +166,7 @@ class Account {
           decimalPlaces: 2,
         });
         this.#balance = this.#balance.addTo(postedInterest);
+        this.#interestAccrued = this.#interestAccrued.addTo(postedInterest);
         this.#pendingInterest = new Amount(0);
       }
 

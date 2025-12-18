@@ -37,7 +37,11 @@ describe('loan-savings-card', () => {
         payment: () => ({ toDecimal: () => 200 }),
         totalInterest: () => ({ toDecimal: () => 20 }),
       },
-      depositAccount: { balance: { toDecimal: () => 30 } },
+      depositInterest: { toDecimal: () => 50 },
+      depositAccount: {
+        balance: { toDecimal: () => 30 },
+        interestAccrued: { toDecimal: () => 50 },
+      },
     });
     const combinedListener = vi.fn();
     const element = await renderCard();

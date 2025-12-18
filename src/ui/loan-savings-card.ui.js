@@ -66,115 +66,115 @@ class LoanSavingsCard extends LitElement {
     const loanSavingsCostText = formatMaybeCurrency(this.results?.loanSavingsCost, this.currency);
 
     return html`
-        <div class="option-card loan-card">
-          <div class="pill-link">
-            <span class="strategy-pill">Loan + Savings Strategy</span>
-          </div>
-          <div class="card-heading">
-            <h2>Loan</h2>
-            <p class="subtitle">Spread payments over time.</p>
-          </div>
+      <div class="option-card loan-card">
+        <div class="pill-link">
+          <span class="strategy-pill">Loan + Savings Strategy</span>
+        </div>
+        <div class="card-heading">
+          <h2>Loan</h2>
+          <p class="subtitle">Spread payments over time.</p>
+        </div>
 
-          <div class="field-group">
-            <p class="group-label">Term Loan Information</p>
-            <div class="field">
-              <label for="loanRate">Loan Nominal Annual Rate</label>
-              <p class="helper">Enter 0% for promotional offers.</p>
-              <input
-                id="loanRate"
-                name="loanRate"
-                type="number"
-                step="0.01"
-                inputmode="decimal"
-                min="0"
-                placeholder="e.g. 5.5"
-                .value=${this.loanRateInput}
-                @input=${this._onLoanInput}
-              />
-            </div>
-
-            <div class="field">
-              <label for="termMonths">How long will you take to pay? (months)</label>
-              <p class="helper">Used for loan payment calculations.</p>
-              <input
-                id="termMonths"
-                name="termMonths"
-                type="number"
-                step="1"
-                inputmode="numeric"
-                min="1"
-                placeholder="e.g. 12"
-                .value=${this.termMonthsInput}
-                @input=${this._onLoanInput}
-                required
-              />
-            </div>
+        <div class="field-group">
+          <p class="group-label">Term Loan Information</p>
+          <div class="field">
+            <label for="loanRate">Loan Nominal Annual Rate</label>
+            <p class="helper">Enter 0% for promotional offers.</p>
+            <input
+              id="loanRate"
+              name="loanRate"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="e.g. 5.5"
+              .value=${this.loanRateInput}
+              @input=${this._onLoanInput}
+            />
           </div>
 
-          <div class="mini-results">
-            <p>
-              <span class="label">Monthly payment:</span>
-              <span data-role="loan-payment">${paymentText}</span>
-            </p>
-            <p>
-              <span class="label">Total interest paid:</span>
-              <span data-role="loan-interest">${interestText}</span>
-            </p>
+          <div class="field">
+            <label for="termMonths">How long will you take to pay? (months)</label>
+            <p class="helper">Used for loan payment calculations.</p>
+            <input
+              id="termMonths"
+              name="termMonths"
+              type="number"
+              step="1"
+              inputmode="numeric"
+              min="1"
+              placeholder="e.g. 12"
+              .value=${this.termMonthsInput}
+              @input=${this._onLoanInput}
+              required
+            />
           </div>
         </div>
 
-        <div class="option-card savings-card">
-          <div class="pill-link">
-            <span class="strategy-pill">Loan + Savings Strategy</span>
-          </div>
-          <div class="card-heading">
-            <h2>Savings while you carry the loan</h2>
-            <p class="subtitle">Where would-be loan payments sit and earn interest.</p>
-          </div>
+        <div class="mini-results">
+          <p>
+            <span class="label">Monthly payment:</span>
+            <span data-role="loan-payment">${paymentText}</span>
+          </p>
+          <p>
+            <span class="label">Total interest paid:</span>
+            <span data-role="loan-interest">${interestText}</span>
+          </p>
+        </div>
+      </div>
 
-          <div class="field-group">
-            <p class="group-label">Deposit Information</p>
-            <div class="field">
-              <label for="apy">Savings or deposit APY</label>
-              <p class="helper">APY on the account holding future payments.</p>
-              <input
-                id="apy"
-                name="apy"
-                type="number"
-                step="0.01"
-                inputmode="decimal"
-                min="0"
-                placeholder="e.g. 4.5"
-                .value=${this.apyInput}
-                @input=${this._onDepositInput}
-                required
-              />
-            </div>
-          </div>
+      <div class="option-card savings-card">
+        <div class="pill-link">
+          <span class="strategy-pill">Loan + Savings Strategy</span>
+        </div>
+        <div class="card-heading">
+          <h2>Savings while you carry the loan</h2>
+          <p class="subtitle">Where would-be loan payments sit and earn interest.</p>
+        </div>
 
-          <div class="mini-results">
-            <p>
-              <span class="label">Interest earned on parked payments:</span>
-              <span data-role="deposit-interest">${savingsInterestText}</span>
-            </p>
-            <p>
-              <span class="label">Final savings balance after last payment:</span>
-              <span data-role="savings-balance">${savingsBalanceText}</span>
-            </p>
-            <p>
-              <span class="label">Loan + savings net cost:</span>
-              <span data-role="loan-savings-cost">${loanSavingsCostText}</span>
-            </p>
-            ${Number.isFinite(this.results?.loanInterest)
-              ? null
-              : html`
-                  <p class="muted helper">
-                    We’ll calculate savings on your loan payments once you enter a loan rate on the
-                    left.
-                  </p>
-                `}
+        <div class="field-group">
+          <p class="group-label">Deposit Information</p>
+          <div class="field">
+            <label for="apy">Savings or deposit APY</label>
+            <p class="helper">APY on the account holding future payments.</p>
+            <input
+              id="apy"
+              name="apy"
+              type="number"
+              step="0.01"
+              inputmode="decimal"
+              min="0"
+              placeholder="e.g. 4.5"
+              .value=${this.apyInput}
+              @input=${this._onDepositInput}
+              required
+            />
           </div>
         </div>
+
+        <div class="mini-results">
+          <p>
+            <span class="label">Interest earned on parked payments:</span>
+            <span data-role="deposit-interest">${savingsInterestText}</span>
+          </p>
+          <p>
+            <span class="label">Final savings balance after last payment:</span>
+            <span data-role="savings-balance">${savingsBalanceText}</span>
+          </p>
+          <p>
+            <span class="label">Loan + savings net cost:</span>
+            <span data-role="loan-savings-cost">${loanSavingsCostText}</span>
+          </p>
+          ${Number.isFinite(this.results?.loanInterest)
+            ? null
+            : html`
+                <p class="muted helper">
+                  We’ll calculate savings on your loan payments once you enter a loan rate on the
+                  left.
+                </p>
+              `}
+        </div>
+      </div>
     `;
   }
 
@@ -357,12 +357,13 @@ class LoanSavingsCard extends LitElement {
       const savingsEndBalance = savingsBalanceAmount?.toDecimal
         ? savingsBalanceAmount.toDecimal()
         : Number.NaN;
-      const depositInterest =
-        Number.isFinite(netValue) && Number.isFinite(loanInterest)
-          ? netValue + loanInterest
-          : Number.NaN;
+      const depositInterestAmount =
+        scenario?.depositInterest ?? scenario?.depositAccount?.interestAccrued;
+      const depositInterest = depositInterestAmount?.toDecimal
+        ? depositInterestAmount.toDecimal()
+        : Number.NaN;
       const loanSavingsCost =
-        Number.isFinite(netValue) && Number.isFinite(loanInterest)
+        Number.isFinite(depositInterest) && Number.isFinite(loanInterest)
           ? loanInterest - depositInterest
           : Number.NaN;
 

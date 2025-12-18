@@ -91,6 +91,32 @@ describe('deposit Account', () => {
     });
   });
 
+  describe('interestAccrued', () => {
+    it('tracks posted interest for idealized accruals', () => {
+      const account = new Account(1000, 0.05);
+
+      account.accrueForDays(30);
+
+      const expectedBalance = 1000 * (1 + 0.05) ** (30 / 365);
+      const expectedInterest = expectedBalance - 1000;
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(expectedInterest, 2);
+      expect(account.balance.toDecimal()).toBeCloseTo(expectedBalance, 2);
+    });
+
+    it('only credits accumulated interest when posted for monthly accruals', () => {
+      const account = new Account(1000, 0.1);
+
+      account.accrueForDaysWithMonthlyPosting(10, '2024-01-05');
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(0, 10);
+
+      account.accrueForDaysWithMonthlyPosting(17, '2024-01-15');
+      const dailyRate = (1 + 0.1) ** (1 / 365) - 1;
+      const expectedPosted = 1000 * dailyRate * 27;
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(expectedPosted, 2);
+      expect(account.balance.toDecimal() - 1000).toBeCloseTo(expectedPosted, 2);
+    });
+  });
+
   describe('accrueForDaysWithMonthlyPosting', () => {
     it('defers interest until month end and leaves mid-month balances unchanged', () => {
       const account = new Account(1000, 0.1);
