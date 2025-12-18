@@ -30,7 +30,7 @@ const tradeoffWidgetStyles = css`
     color: var(--base0);
     background: var(--base03);
     padding: 1rem;
-    border-radius: .5rem;
+    border-radius: 0.5rem;
     border: 1px solid var(--base02);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
   }
@@ -45,14 +45,14 @@ const tradeoffWidgetStyles = css`
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    font-size: .75rem;
+    font-size: 0.75rem;
     color: var(--base00);
   }
 
   .solar-card {
     background: var(--base02);
     border: 1px solid var(--base01);
-    border-radius: .5rem;
+    border-radius: 0.5rem;
     padding: 1rem;
   }
 
@@ -71,7 +71,7 @@ const tradeoffWidgetStyles = css`
   .cards-wrapper {
     display: flex;
     flex-flow: row wrap;
-    gap: .5rem;
+    gap: 0.5rem;
     flex: 1 1 0;
   }
 
@@ -84,12 +84,12 @@ const tradeoffWidgetStyles = css`
   .option-card {
     background: var(--base02);
     border: 1px solid var(--base01);
-    border-radius: .5rem;
+    border-radius: 0.5rem;
     padding: 1rem;
     display: grid;
     align-items: start;
     align-content: start;
-    gap: .5rem;
+    gap: 0.5rem;
     flex: 1 1 0;
   }
 
@@ -124,14 +124,14 @@ const tradeoffWidgetStyles = css`
     padding: 6px 10px;
     border-radius: 999px;
     font-weight: 700;
-    font-size: .75rem;
+    font-size: 0.75rem;
     letter-spacing: 0.1px;
     text-align: center;
     flex: 1 1 auto;
   }
 
-  .card-card .strategy-pill  {
-    background: var(--violet); 
+  .card-card .strategy-pill {
+    background: var(--violet);
   }
 
   .card-heading h2 {
@@ -143,7 +143,7 @@ const tradeoffWidgetStyles = css`
   .subtitle {
     margin: 2px 0 0 0;
     color: var(--base0);
-    font-size: .8rem;
+    font-size: 0.8rem;
   }
 
   .field {
@@ -174,7 +174,7 @@ const tradeoffWidgetStyles = css`
   .helper {
     margin: 0;
     color: var(--base0);
-    font-size: .8rem;
+    font-size: 0.8rem;
   }
 
   input,
@@ -208,12 +208,12 @@ const tradeoffWidgetStyles = css`
     color: var(--base0);
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    font-size: .9rem;
+    font-size: 0.9rem;
   }
 
   .mini-results {
     background: rgba(255, 255, 255, 0.02);
-    border-radius: .5rem;
+    border-radius: 0.5rem;
     padding: 1rem;
     display: grid;
     gap: 6px;
@@ -226,7 +226,7 @@ const tradeoffWidgetStyles = css`
     flex-direction: column;
     gap: 2px;
     color: var(--base1);
-    font-size: .9rem;
+    font-size: 0.9rem;
   }
 
   .mini-results .label {
@@ -259,7 +259,7 @@ const tradeoffWidgetStyles = css`
     color: var(--red);
     min-height: 18px;
     margin: 0;
-    font-size: .8rem;
+    font-size: 0.8rem;
   }
 
   @media (max-width: 960px) {
