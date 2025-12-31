@@ -1,57 +1,43 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
 
-import { TradeoffComparison } from '../tradeoff.js';
+import './loan-savings-card.ui.js';
+import './credit-card-card.ui.js';
+import { formatMaybeCurrency } from './formatting.ui.js';
+import { tradeoffWidgetStyles } from './tradeoff-widget.styles.js';
 
-const currencyFormatter = (value, currency = 'USD') =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
-const DEFAULT_CC_RATE_PERCENT = 28.99;
+const EMPTY_METRICS = Object.freeze({
+  loanPayment: Number.NaN,
+  loanInterest: Number.NaN,
+  depositInterest: Number.NaN,
+  savingsEndBalance: Number.NaN,
+  loanSavingsCost: Number.NaN,
+  cardRewards: Number.NaN,
+  cardInterest: Number.NaN,
+  cardNetCost: Number.NaN,
+});
 
 class TradeoffWidget extends LitElement {
   static properties = {
-    loanRateInput: { state: true },
-    apyInput: { state: true },
-    ccRewardsRateInput: { state: true },
-    ccRateInput: { state: true },
     principalInput: { state: true },
-    termMonthsInput: { state: true },
     startDateInput: { state: true },
     modeInput: { state: true },
     errorMessage: { state: true },
-    resultText: { state: true },
-    ccRewardsText: { state: true },
-    ccInterestText: { state: true },
+    metrics: { state: true },
     currency: { type: String },
     periodDays: { type: Number, attribute: 'period-days' },
   };
 
   constructor() {
     super();
-    this.loanRateInput = '';
-    this.apyInput = '';
-    this.ccRewardsRateInput = '';
-    this.ccRateInput = '';
     this.principalInput = '';
-    this.termMonthsInput = '';
     this.startDateInput = '';
     this.modeInput = 'idealized';
     this.errorMessage = '';
-    this.resultText = 'dollars gained or lost';
-    this.ccRewardsText = 'dollars';
-    this.ccInterestText = 'dollars';
+    this.metrics = null;
     this._currency = 'USD';
     this.periodDays = undefined;
-    this._calculator = new TradeoffComparison();
-    this._lastNetValue = undefined;
-    this._lastCcRewardsValue = undefined;
-    this._lastCcInterestValue = undefined;
-  }
-
-  updated(changed) {
-    if (changed.has('periodDays')) {
-      const days = Number.isFinite(this.periodDays) ? this.periodDays : undefined;
-      this._calculator = new TradeoffComparison({ periodDays: days });
-      this._calculateIfReady();
-    }
+    this._loanSavingsData = null;
+    this._ccData = null;
   }
 
   get currency() {
@@ -63,166 +49,17 @@ class TradeoffWidget extends LitElement {
     const previous = this._currency;
     this._currency = normalized;
     this.requestUpdate('currency', previous);
-
-    if (Number.isFinite(this._lastNetValue)) {
-      this._updateResult(this._lastNetValue);
-    }
-    if (Number.isFinite(this._lastCcRewardsValue) || Number.isFinite(this._lastCcInterestValue)) {
-      this._updateCreditCardResults(this._lastCcRewardsValue, this._lastCcInterestValue);
-    }
   }
 
   render() {
+    const metrics = this.metrics || EMPTY_METRICS;
+
     return html`
-      <section class="card">
-        <div class="header">
-          <div class="pill">Loan vs APY Widget</div>
-        </div>
-        <form @submit=${this._onSubmit} novalidate>
-          <div class="field">
-            <label for="mode">Calendar mode</label>
-            <select id="mode" name="mode" .value=${this.modeInput} @input=${this._onInput}>
-              <option value="idealized">Idealized (31-day months)</option>
-              <option value="real">Real world calendar</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="startDate">Start date</label>
-            <input
-              id="startDate"
-              name="startDate"
-              type="date"
-              placeholder="Starting date for schedule"
-              .value=${this.startDateInput}
-              @input=${this._onInput}
-              ?required=${this.modeInput === 'real'}
-            />
-          </div>
-
-          <div class="field">
-            <label for="principal">Purchase amount</label>
-            <input
-              id="principal"
-              name="principal"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="Purchase amount"
-              .value=${this.principalInput}
-              @input=${this._onInput}
-              required
-            />
-          </div>
-
-          <div class="field">
-            <label for="termMonths">Loan term in months</label>
-            <input
-              id="termMonths"
-              name="termMonths"
-              type="number"
-              step="1"
-              inputmode="numeric"
-              min="1"
-              placeholder="Number of months to pay"
-              .value=${this.termMonthsInput}
-              @input=${this._onInput}
-              required
-            />
-          </div>
-
-          <div class="field">
-            <label for="loanRate">Nominal annual loan rate</label>
-            <input
-              id="loanRate"
-              name="loanRate"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="Annual Loan Rate (defaults to 0%)"
-              .value=${this.loanRateInput}
-              @input=${this._onInput}
-            />
-          </div>
-
-          <div class="field">
-            <label for="apy">Deposit APY</label>
-            <input
-              id="apy"
-              name="apy"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="Deposit account APY"
-              .value=${this.apyInput}
-              @input=${this._onInput}
-              required
-            />
-          </div>
-
-          <div class="field">
-            <label for="ccRate">Credit Card APR</label>
-            <input
-              id="ccRate"
-              name="ccRate"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="CC Rate (defaults to 28.99%)"
-              .value=${this.ccRateInput}
-              @input=${this._onInput}
-            />
-          </div>
-
-          <div class="field">
-            <label for="ccRewardsRate">Credit Card Rewards Rate</label>
-            <input
-              id="ccRewardsRate"
-              name="ccRewardsRate"
-              type="number"
-              step="0.01"
-              inputmode="decimal"
-              min="0"
-              placeholder="Credit Card Rewards Rate"
-              .value=${this.ccRewardsRateInput}
-              @input=${this._onInput}
-            />
-          </div>
-        </form>
-
-        <div class="divider" aria-hidden="true">
-          <span>•</span>
-          <span>•</span>
-          <span>•</span>
-        </div>
-
-        <div class="results-grid">
-          <div class="field result-block">
-            <label for="result">Net benefit (or Cost) of BNPL + savings account</label>
-            <output id="result" data-role="result" aria-live="polite">${this.resultText}</output>
-          </div>
-
-          <div class="field result-block">
-            <label for="ccRewardsResult">One cycle credit card rewards on purchase</label>
-            <output id="ccRewardsResult" data-role="cc-rewards" aria-live="polite">
-              ${this.ccRewardsText}
-            </output>
-          </div>
-
-          <div class="field result-block">
-            <label for="ccInterestResult">One cycle credit card interest on purchase</label>
-            <output id="ccInterestResult" data-role="cc-interest" aria-live="polite">
-              ${this.ccInterestText}
-            </output>
-          </div>
-        </div>
-
+      <article class="tradeoff-shell">
+        ${this._renderIntro()} ${this._renderGlobalInputs()} ${this._renderCards()}
+        ${this._renderSummary(metrics)}
         <p class="error" data-role="error" role="alert">${this.errorMessage}</p>
-      </section>
+      </article>
     `;
   }
 
@@ -232,130 +69,92 @@ class TradeoffWidget extends LitElement {
 
   _onInput(event) {
     const { name, value } = event.target;
-    this[`${name}Input`] = value;
+    const stateKey = `${name}Input`;
+    if (stateKey in this) {
+      this[stateKey] = value;
+    }
     this.errorMessage = '';
     if (value === '') {
       this._clearResult();
     }
-    this._calculateIfReady();
+    if (name === 'principal') {
+      const parsed = this._parseMoney(value);
+      if (parsed === null) {
+        return;
+      }
+      if (parsed < 0) {
+        this._setError('Enter a positive value for the amount.');
+        return;
+      }
+      this.errorMessage = '';
+      return;
+    }
+    if (name === 'startDate' || name === 'mode') {
+      if (this.modeInput === 'real' || this.modeInput === 'real-world') {
+        const parsedDate = this._parseDate(this.startDateInput);
+        if (parsedDate === null) {
+          return;
+        }
+      }
+      this.errorMessage = '';
+    }
   }
 
-  _calculateIfReady() {
-    const modeValue = (this.modeInput || 'idealized').toLowerCase();
-    const useRealMode = modeValue === 'real' || modeValue === 'real-world';
+  _onCcChange(event) {
+    const detail = event.detail || {};
+    if (!detail.valid) {
+      this._ccData = null;
+      this._updateMetrics();
+      return;
+    }
+    this._ccData = detail;
+    this._updateMetrics();
+  }
 
-    const principal = this._parseMoney(this.principalInput);
-    if (principal === null) {
-      this._clearResult();
-      return;
-    }
-    if (principal < 0) {
-      this._setError('Enter a positive value for the amount.');
-      return;
-    }
-
-    const termMonths = this._parseInteger(this.termMonthsInput);
-    if (termMonths === null) {
-      this._clearResult();
-      return;
-    }
-    if (termMonths <= 0) {
-      this._setError('Enter a positive value for the term.');
-      return;
-    }
-
-    const apyPercent = this._parseMoney(this.apyInput);
-    if (apyPercent === null) {
-      this._clearResult();
-      return;
-    }
-    if (apyPercent < 0) {
-      this._setError('APY must be zero or greater.');
-      return;
-    }
-
-    const ratePercent = this._parseMoney(this.loanRateInput);
-    if (ratePercent !== null && ratePercent < 0) {
-      this._setError('Rate must be zero or greater.');
-      return;
-    }
-
-    let ccRewardsPercent = null;
-    if (this.ccRewardsRateInput !== '' && this.ccRewardsRateInput !== undefined) {
-      ccRewardsPercent = this._parseMoney(this.ccRewardsRateInput);
-      if (ccRewardsPercent === null) {
-        this._clearResult();
-        return;
+  _onLoanSavingsChange(event) {
+    const detail = event.detail || {};
+    if (!detail.valid) {
+      this._loanSavingsData = null;
+      if (detail.errorMessage) {
+        this._setError(detail.errorMessage);
       }
-      if (ccRewardsPercent < 0) {
-        this._setError('Rewards rate must be zero or greater.');
-        return;
-      }
+      this._updateMetrics();
+      return;
     }
+    this.errorMessage = '';
+    this._loanSavingsData = detail;
+    this._updateMetrics();
+  }
 
-    let ccRatePercent = null;
-    if (this.ccRateInput !== '' && this.ccRateInput !== undefined) {
-      ccRatePercent = this._parseMoney(this.ccRateInput);
-      if (ccRatePercent === null) {
-        this._clearResult();
-        return;
-      }
-      if (ccRatePercent < 0) {
-        this._setError('Credit card rate must be zero or greater.');
-        return;
-      }
-    }
+  _updateMetrics() {
+    const loanSavings = this._loanSavingsData?.valid ? this._loanSavingsData : null;
+    const ccData = this._ccData?.valid ? this._ccData : null;
+    const cardRewardsValue = ccData?.rewardsValue ?? Number.NaN;
+    const cardInterestValue = ccData?.interestValue ?? Number.NaN;
+    const cardNetCost =
+      Number.isFinite(cardInterestValue) && Number.isFinite(cardRewardsValue)
+        ? cardInterestValue - cardRewardsValue
+        : Number.NaN;
 
-    let startDate = undefined;
-    if (useRealMode) {
-      startDate = this._parseDate(this.startDateInput);
-      if (startDate === null) {
-        this._clearResult();
-        return;
-      }
-    }
+    this.metrics = {
+      loanPayment: loanSavings?.loanPayment ?? Number.NaN,
+      loanInterest: loanSavings?.loanInterest ?? Number.NaN,
+      depositInterest: loanSavings?.depositInterest ?? Number.NaN,
+      savingsEndBalance: loanSavings?.savingsEndBalance ?? Number.NaN,
+      loanSavingsCost: loanSavings?.loanSavingsCost ?? Number.NaN,
+      cardRewards: cardRewardsValue,
+      cardInterest: cardInterestValue,
+      cardNetCost,
+    };
 
-    const loanRate = ratePercent === null ? 0 : ratePercent / 100;
-    const depositApy = apyPercent / 100;
-    const ccRewardsRate = ccRewardsPercent === null ? 0 : ccRewardsPercent / 100;
-    const ccRate = (ccRatePercent === null ? DEFAULT_CC_RATE_PERCENT : ccRatePercent) / 100;
-
-    const scenario = this._calculator.simulateScenario({
-      principal,
-      periodCount: termMonths,
-      loanRate,
-      depositApy,
-      ccRewardsRate,
-      ccRate,
-      mode: modeValue,
-      startDate,
-    });
-
-    const netValue = scenario?.net?.toDecimal ? scenario.net.toDecimal() : Number.NaN;
-    this._lastNetValue = Number.isFinite(netValue) ? netValue : undefined;
-    const ccRewardsValue = scenario?.creditCardRewards?.toDecimal
-      ? scenario.creditCardRewards.toDecimal()
-      : Number.NaN;
-    const ccInterestValue = scenario?.creditCardInterest?.toDecimal
-      ? scenario.creditCardInterest.toDecimal()
-      : Number.NaN;
-    this._lastCcRewardsValue = Number.isFinite(ccRewardsValue) ? ccRewardsValue : undefined;
-    this._lastCcInterestValue = Number.isFinite(ccInterestValue) ? ccInterestValue : undefined;
-
-    this._updateResult(this._lastNetValue);
-    this._updateCreditCardResults(this._lastCcRewardsValue, this._lastCcInterestValue);
     this._emitChange({
-      principal,
-      termMonths,
-      loanRate,
-      depositApy,
-      ccRewardsRate,
-      ccRate,
-      mode: modeValue,
-      startDate,
-      netValue,
-      creditCardRewards: ccRewardsValue,
-      creditCardInterest: ccInterestValue,
+      principal: loanSavings?.principal ?? null,
+      depositApy: loanSavings?.depositApy,
+      mode: loanSavings?.mode ?? this.modeInput,
+      startDate: loanSavings?.startDate,
+      netValue: loanSavings?.netValue,
+      creditCardRewards: cardRewardsValue,
+      creditCardInterest: cardInterestValue,
     });
   }
 
@@ -369,29 +168,113 @@ class TradeoffWidget extends LitElement {
     );
   }
 
-  _updateResult(netValue) {
-    if (!Number.isFinite(netValue)) {
-      this.resultText = 'dollars gained or lost';
-      return;
-    }
-
-    const isCost = netValue < 0;
-    const formatted = this._formatCurrency(Math.abs(netValue));
-    this.resultText = `${isCost ? 'Cost' : 'Benefit'}: ${formatted}`;
+  _renderIntro() {
+    return html`
+      <header class="intro">
+        <p class="eyebrow">Loan, savings, credit card</p>
+        <h1>Comparing a loan, loan + savings account, and a credit card</h1>
+      </header>
+    `;
   }
 
-  _updateCreditCardResults(rewardsValue, interestValue) {
-    if (!Number.isFinite(rewardsValue)) {
-      this.ccRewardsText = 'dollars';
-    } else {
-      this.ccRewardsText = this._formatCurrency(rewardsValue);
-    }
+  _renderGlobalInputs() {
+    return html`
+      <section class="solar-card global-card">
+        <div class="field">
+          <label for="principal">Purchase amount</label>
+          <p class="helper">Total price</p>
+          <input
+            id="principal"
+            name="principal"
+            type="number"
+            step="0.01"
+            inputmode="decimal"
+            min="0"
+            placeholder="e.g. 1200"
+            .value=${this.principalInput}
+            @input=${this._onInput}
+            required
+          />
+        </div>
 
-    if (!Number.isFinite(interestValue)) {
-      this.ccInterestText = 'dollars';
-    } else {
-      this.ccInterestText = this._formatCurrency(interestValue);
-    }
+        <div class="timing-row">
+          <div class="field compact">
+            <label for="mode">Calculation mode</label>
+            <p class="helper">
+              Real world is slightly more accurate when you know your loan start date.
+            </p>
+            <select id="mode" name="mode" .value=${this.modeInput} @input=${this._onInput}>
+              <option value="idealized">Idealized (31-day months)</option>
+              <option value="real">Real world calendar</option>
+            </select>
+          </div>
+
+          ${this.modeInput === 'real'
+            ? html`
+                <div class="field compact">
+                  <label for="startDate">Start date</label>
+                  <p class="helper">Needed only for the real-world calendar option.</p>
+                  <input
+                    id="startDate"
+                    name="startDate"
+                    type="date"
+                    placeholder="Starting date for schedule"
+                    .value=${this.startDateInput}
+                    @input=${this._onInput}
+                    ?required=${this.modeInput === 'real'}
+                  />
+                </div>
+              `
+            : null}
+        </div>
+      </section>
+    `;
+  }
+
+  _renderCards() {
+    return html`
+      <section class="cards-wrapper">
+        <loan-savings-card
+          .principal=${this._principalValue()}
+          .mode=${this.modeInput}
+          .startDate=${this.startDateInput}
+          .currency=${this.currency}
+          .periodDays=${this.periodDays}
+          @loan-savings-change=${this._onLoanSavingsChange}
+        ></loan-savings-card>
+
+        <credit-card-card
+          .principal=${this._principalValue()}
+          .currency=${this.currency}
+          .periodDays=${this.periodDays}
+          @cc-change=${this._onCcChange}
+        ></credit-card-card>
+      </section>
+    `;
+  }
+
+  _renderSummary(metrics) {
+    const loanInterestText = formatMaybeCurrency(metrics.loanInterest, this.currency);
+    const loanSavingsCostText = formatMaybeCurrency(metrics.loanSavingsCost, this.currency);
+    const ccRewardsText = formatMaybeCurrency(metrics.cardRewards, this.currency);
+    const ccInterestText = formatMaybeCurrency(metrics.cardInterest, this.currency);
+
+    return html`
+      <section class="solar-card summary-card">
+        <div class="bullets">
+          <p>
+            <span class="bullet-label">Loan + savings net benefit/cost:</span>
+            <span data-role="loan-savings-cost">${loanSavingsCostText}</span>
+          </p>
+          <p><span class="bullet-label">Plain loan cost:</span> ${loanInterestText}</p>
+          <p><span class="bullet-label">Credit reward:</span> <span>${ccRewardsText}</span></p>
+          <p>
+            <span class="bullet-label">One cycle credit card cost if not paid:</span>
+            <span>${ccInterestText}</span>
+          </p>
+        </div>
+      </section>
+    `;
   }
 
   _setError(message) {
@@ -400,12 +283,14 @@ class TradeoffWidget extends LitElement {
   }
 
   _clearResult() {
-    this._lastNetValue = undefined;
-    this._lastCcRewardsValue = undefined;
-    this._lastCcInterestValue = undefined;
-    this.resultText = 'dollars gained or lost';
-    this.ccRewardsText = 'dollars';
-    this.ccInterestText = 'dollars';
+    this._loanSavingsData = null;
+    this._ccData = null;
+    this.metrics = null;
+  }
+
+  _principalValue() {
+    const parsed = Number.parseFloat(String(this.principalInput).trim());
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   _parseMoney(value) {
@@ -419,23 +304,6 @@ class TradeoffWidget extends LitElement {
     }
     const parsed = Number.parseFloat(normalized);
     if (!Number.isFinite(parsed)) {
-      this._setError('Enter a numeric value.');
-      return null;
-    }
-    return parsed;
-  }
-
-  _parseInteger(value) {
-    if (value === '' || value === undefined || value === null) {
-      return null;
-    }
-    const normalized = String(value).trim();
-    if (!/^-?\d+$/.test(normalized)) {
-      this._setError('Enter a numeric value.');
-      return null;
-    }
-    const parsed = Number.parseInt(normalized, 10);
-    if (Number.isNaN(parsed)) {
       this._setError('Enter a numeric value.');
       return null;
     }
@@ -463,129 +331,7 @@ class TradeoffWidget extends LitElement {
     return normalized;
   }
 
-  _formatCurrency(amount) {
-    try {
-      return currencyFormatter(amount, this.currency);
-    } catch {
-      return currencyFormatter(amount, 'USD');
-    }
-  }
-
-  static styles = css`
-    :host {
-      display: block;
-    }
-
-    .card {
-      background: var(--tradeoff-bg, #0d0d0f);
-      border: 1px solid var(--tradeoff-border, #5a5f66);
-      border-radius: 14px;
-      padding: 20px;
-      color: var(--tradeoff-text, #e6f1ff);
-      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.35);
-      gap: 14px;
-      display: grid;
-    }
-
-    .header {
-      display: flex;
-      justify-content: flex-start;
-    }
-
-    .pill {
-      background: var(--tradeoff-accent, #1e9afd);
-      color: #0b1b2b;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.2px;
-    }
-
-    form {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    }
-
-    .field {
-      display: grid;
-      gap: 6px;
-    }
-
-    label {
-      font-weight: 700;
-      font-size: 18px;
-    }
-
-    input,
-    select,
-    output {
-      background: transparent;
-      border: 1px solid var(--tradeoff-input-border, #7c858f);
-      border-radius: 4px;
-      padding: 10px;
-      color: var(--tradeoff-text, #e6f1ff);
-      font-size: 15px;
-      font-family:
-        'IBM Plex Sans',
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        'Segoe UI',
-        sans-serif;
-    }
-
-    output {
-      min-height: 40px;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    input:focus,
-    select:focus {
-      outline: 2px solid var(--tradeoff-accent, #1e9afd);
-      box-shadow: 0 0 0 2px rgba(30, 154, 253, 0.2);
-    }
-
-    .divider {
-      text-align: center;
-      letter-spacing: 12px;
-      color: var(--tradeoff-divider, #7c858f);
-      padding: 6px 0;
-    }
-
-    .results-grid {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    }
-
-    .result-block label {
-      font-size: 20px;
-    }
-
-    .error {
-      color: var(--tradeoff-error, #f47676);
-      min-height: 18px;
-      margin: 0;
-      font-size: 13px;
-    }
-
-    @media (prefers-color-scheme: light) {
-      .card {
-        background: var(--tradeoff-bg-light, #fafafa);
-        color: var(--tradeoff-text-light, #0d1a26);
-        border-color: var(--tradeoff-border-light, #cfd6dd);
-      }
-
-      input,
-      select,
-      output {
-        color: var(--tradeoff-text-light, #0d1a26);
-      }
-    }
-  `;
+  static styles = tradeoffWidgetStyles;
 }
 
 customElements.define('tradeoff-widget', TradeoffWidget);

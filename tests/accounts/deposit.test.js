@@ -91,18 +91,50 @@ describe('deposit Account', () => {
     });
   });
 
+  describe('accrueForDays', () => {
+    it('correlates posted interest accumulator and balance at 0% APY', () => {
+      const account = new Account(1000, 0);
+      account.accrueForDays(31);
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(0, 2);
+      expect(account.balance.toDecimal()).toBeCloseTo(1000, 2);
+    });
+
+    it('tracks posted interest for idealized accruals', () => {
+      const account = new Account(1000, 0.05);
+
+      account.accrueForDays(30);
+
+      const expectedBalance = 1000 * (1 + 0.05) ** (30 / 365);
+      const expectedInterest = expectedBalance - 1000;
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(expectedInterest, 2);
+      expect(account.balance.toDecimal()).toBeCloseTo(expectedBalance, 2);
+    });
+  });
+
   describe('accrueForDaysWithMonthlyPosting', () => {
     it('defers interest until month end and leaves mid-month balances unchanged', () => {
       const account = new Account(1000, 0.1);
 
       account.accrueForDaysWithMonthlyPosting(10, '2024-01-05');
-      expect(account.balance.toDecimal()).toBeCloseTo(1000, 6);
+      expect(account.balance.toDecimal()).toBeCloseTo(1000, 10);
+    });
 
-      account.accrueForDaysWithMonthlyPosting(17, '2024-01-15');
-      const dailyRate = (1 + 0.1) ** (1 / 365) - 1;
-      const expectedPosted = 1000 * dailyRate * 27; // Jan 5 through Jan 31
-      expect(account.balance.toDecimal()).toBeCloseTo(1007.05, 2);
-      expect(account.balance.toDecimal()).toBeLessThanOrEqual(1000 + expectedPosted);
+    it('posts interest at month end', () => {
+      const balance = 5280.4;
+      const account = new Account(balance, 0.042);
+      account.accrueForDaysWithMonthlyPosting(18, '2025-01-14');
+      const expectedPosted = balance * ((1 + 0.042) ** (18 / 365) - 1);
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(expectedPosted, 2);
+      expect(account.balance.toDecimal()).toBeCloseTo(balance + expectedPosted, 2);
+    });
+
+    it('accumulates across months while posting at month end', () => {
+      const account = new Account(2349.99, 0.042);
+
+      account.accrueForDaysWithMonthlyPosting(30, '2025-09-22');
+      // using a specific spreadsheet computed value to further validate rounding behavior
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(2.3851, 2);
+      expect(account.balance.toDecimal()).toBeCloseTo(2352.38, 2);
     });
 
     it('throws on invalid start dates and negative spans', () => {

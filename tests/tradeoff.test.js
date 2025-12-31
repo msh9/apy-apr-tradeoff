@@ -43,6 +43,20 @@ describe('TradeoffComparison', () => {
 
       expect(scenario.net.toDecimal()).toBeCloseTo(balance, 2);
     });
+
+    it('returns the deposit interest accumulator alongside the account', () => {
+      const calculator = new TradeoffComparison({ periodDays: financialCalendar.daysInMonth });
+
+      const scenario = calculator.simulateScenario({
+        principal: 500,
+        periodCount: 1,
+        loanRate: 0,
+        depositApy: 0.08,
+      });
+
+      expect(scenario.depositInterest).toBe(scenario.depositAccount.interestAccrued);
+      expect(scenario.depositInterest.toDecimal()).toBeGreaterThan(0);
+    });
   });
 
   describe('simulateScenario neutral behavior', () => {
@@ -130,7 +144,7 @@ describe('TradeoffComparison', () => {
   });
 
   describe('simulateScenario real world mode', () => {
-    it('uses calendar day spans with month-end posting before payments', () => {
+    it('uses calendar day spans with 6 month-end posting before payments', () => {
       const calculator = new TradeoffComparison();
       const scenario = calculator.simulateScenario({
         principal: 2349.99,
@@ -142,7 +156,24 @@ describe('TradeoffComparison', () => {
       });
 
       // Expected value spreadshet computed
-      expect(scenario.net.toDecimal()).toBeCloseTo(27.52, 2);
+      expect(scenario.net.toDecimal()).toBeCloseTo(27.57, 2);
+      expect(scenario.depositInterest.toDecimal()).toBeCloseTo(27.54, 2);
+    });
+
+    it('uses calendar day spans with 3 month-end posting before payments', () => {
+      const calculator = new TradeoffComparison();
+      const scenario = calculator.simulateScenario({
+        principal: 5280.4,
+        periodCount: 3,
+        loanRate: 0.06,
+        depositApy: 0.042,
+        mode: 'real',
+        startDate: '2025-01-14',
+      });
+
+      // Expected value spreadshet computed
+      expect(scenario.net.toDecimal()).toBeCloseTo(-19.7, 2);
+      expect(scenario.depositInterest.toDecimal()).toBeCloseTo(33.18, 2);
     });
 
     it('throws when real mode is selected without a start date', () => {

@@ -73,6 +73,7 @@ class TradeoffComparison {
       creditCardAccount,
       creditCardRewards,
       creditCardInterest,
+      depositInterest: depositAccount.interestAccrued,
       net: resultNet,
     };
   }

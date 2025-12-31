@@ -23,6 +23,7 @@ class Account {
   #balance;
   #dailyRate;
   #pendingInterest;
+  #interestAccrued;
   /**
    * "Opens" an account with a opening balance and the percentage yield to be used for subsequent calculations.
    *  Values may be specified as numbers of as Amounts. Values provided as JS numbers will be converted to Amounts
@@ -34,6 +35,7 @@ class Account {
     this.#balance = new Amount(openingBalance);
     this.#apy = new Amount(apy);
     this.#pendingInterest = new Amount(0);
+    this.#interestAccrued = new Amount(0);
 
     const one = new Amount(1);
     this.#dailyRate = one.addTo(this.#apy).nthRoot(financialCalendar.daysInYear).subtractFrom(one);
@@ -53,6 +55,14 @@ class Account {
    */
   get balance() {
     return this.#balance;
+  }
+
+  /**
+   * Returns the total interest credited to the account as an Amount
+   * @property {Amount} interestAccrued
+   */
+  get interestAccrued() {
+    return this.#interestAccrued;
   }
 
   /**
@@ -108,10 +118,13 @@ class Account {
       );
     }
 
-    this.#balance = this.#balance.addTo(accruingBalance, {
+    const updatedBalance = this.#balance.addTo(accruingBalance, {
       roundingMode: 'bankers',
       decimalPlaces: 2,
     });
+    const postedInterest = updatedBalance.subtractFrom(this.#balance);
+    this.#balance = updatedBalance;
+    this.#interestAccrued = this.#interestAccrued.addTo(postedInterest);
 
     return this;
   }
@@ -121,11 +134,9 @@ class Account {
    * This mirrors common consumer deposit behavior where daily interest is not immediately available.
    * @param {number} days Number of days to accrue over
    * @param {Date|string|number} startDate Starting calendar date used to find month boundaries
-   * @param {object} [options]
-   * @param {function} [options.isMonthEnd] Optional predicate receiving a Date to determine month-end
    * @returns {Account} This account updated by the accrual
    */
-  accrueForDaysWithMonthlyPosting(days, startDate, { isMonthEnd } = {}) {
+  accrueForDaysWithMonthlyPosting(days, startDate) {
     if (!Number.isInteger(days)) {
       throw new Error('Days must be an integer number');
     }
@@ -135,25 +146,21 @@ class Account {
     if (days === 0) {
       return this;
     }
-
-    const monthEndCheck =
-      typeof isMonthEnd === 'function'
-        ? isMonthEnd
-        : (date) => isSameDay(date, lastDayOfMonth(date));
-
     let currentDate = normalizeDate(startDate);
 
     for (let i = 0; i < days; i += 1) {
-      const dailyInterest = this.#balance.multiplyBy(this.#dailyRate);
+      //Accrual implemented as daily compounding interest with monthly posting and fractional cent rollover
+      const dailyInterest = this.#balance.addTo(this.#pendingInterest).multiplyBy(this.#dailyRate);
       this.#pendingInterest = this.#pendingInterest.addTo(dailyInterest);
 
-      if (monthEndCheck(currentDate)) {
+      if (isSameDay(currentDate, lastDayOfMonth(currentDate))) {
         const postedInterest = this.#pendingInterest.addTo(new Amount(0), {
           roundingMode: 'bankers',
           decimalPlaces: 2,
         });
         this.#balance = this.#balance.addTo(postedInterest);
-        this.#pendingInterest = new Amount(0);
+        this.#interestAccrued = this.#interestAccrued.addTo(postedInterest);
+        this.#pendingInterest = this.#pendingInterest.subtractFrom(postedInterest);
       }
 
       currentDate = addDays(currentDate, 1);
