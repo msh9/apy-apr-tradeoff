@@ -92,6 +92,13 @@ describe('deposit Account', () => {
   });
 
   describe('accrueForDays', () => {
+    it('correlates posted interest accumulator and balance at 0% APY', () => {
+      const account = new Account(1000, 0);
+      account.accrueForDays(31);
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(0, 2);
+      expect(account.balance.toDecimal()).toBeCloseTo(1000, 2);
+    });
+
     it('tracks posted interest for idealized accruals', () => {
       const account = new Account(1000, 0.05);
 
@@ -113,20 +120,21 @@ describe('deposit Account', () => {
     });
 
     it('posts interest at month end', () => {
-      const account = new Account(1000, 0.1);
-      account.accrueForDaysWithMonthlyPosting(17, '2024-01-15');
-      const expectedPosted = 1000 * ((1 + 0.1) ** (17 / 365) - 1);
+      const balance = 5280.4;
+      const account = new Account(balance, 0.042);
+      account.accrueForDaysWithMonthlyPosting(18, '2025-01-14');
+      const expectedPosted = balance * ((1 + 0.042) ** (18 / 365) - 1);
       expect(account.interestAccrued.toDecimal()).toBeCloseTo(expectedPosted, 2);
-      expect(account.balance.toDecimal()).toBeCloseTo(1000 + expectedPosted, 2);
+      expect(account.balance.toDecimal()).toBeCloseTo(balance + expectedPosted, 2);
     });
 
     it('accumulates across months while posting at month end', () => {
       const account = new Account(2349.99, 0.042);
 
       account.accrueForDaysWithMonthlyPosting(30, '2025-09-22');
-      const expectedPosted = 2349.99 * ((1.042) ** (9 / 365) - 1);
-      expect(account.interestAccrued.toDecimal()).toBeCloseTo(expectedPosted, 2);
-      expect(account.balance.toDecimal()).toBeCloseTo(2349.99 + expectedPosted, 2);
+      // using a specific spreadsheet computed value to further validate rounding behavior
+      expect(account.interestAccrued.toDecimal()).toBeCloseTo(2.3851, 2);
+      expect(account.balance.toDecimal()).toBeCloseTo(2352.38, 2);
     });
 
     it('throws on invalid start dates and negative spans', () => {

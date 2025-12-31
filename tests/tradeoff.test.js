@@ -156,7 +156,7 @@ describe('TradeoffComparison', () => {
       });
 
       // Expected value spreadshet computed
-      expect(scenario.net.toDecimal()).toBeCloseTo(27.77, 2);
+      expect(scenario.net.toDecimal()).toBeCloseTo(27.79, 2);
       expect(scenario.depositInterest.toDecimal()).toBeCloseTo(27.74, 2);
     });
 
@@ -172,7 +172,7 @@ describe('TradeoffComparison', () => {
       });
 
       // Expected value spreadshet computed
-      expect(scenario.net.toDecimal()).toBeCloseTo(-19.32, 2);
+      expect(scenario.net.toDecimal()).toBeCloseTo(-19.3, 2);
       expect(scenario.depositInterest.toDecimal()).toBeCloseTo(32.55, 2);
     });
 

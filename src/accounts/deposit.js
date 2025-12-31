@@ -149,9 +149,8 @@ class Account {
     let currentDate = normalizeDate(startDate);
 
     for (let i = 0; i < days; i += 1) {
-      // Daily compounding: accrue interest on both the posted balance and any unposted (pending) interest.
-      const effectiveBalance = this.#balance.addTo(this.#pendingInterest);
-      const dailyInterest = effectiveBalance.multiplyBy(this.#dailyRate);
+      //Accrual implemented as daily compounding interest with monthly posting and fractional cent rollover
+      const dailyInterest = this.#balance.addTo(this.#pendingInterest).multiplyBy(this.#dailyRate);
       this.#pendingInterest = this.#pendingInterest.addTo(dailyInterest);
 
       if (isSameDay(currentDate, lastDayOfMonth(currentDate))) {
@@ -161,7 +160,6 @@ class Account {
         });
         this.#balance = this.#balance.addTo(postedInterest);
         this.#interestAccrued = this.#interestAccrued.addTo(postedInterest);
-        // Maintain fractional cents that were not posted
         this.#pendingInterest = this.#pendingInterest.subtractFrom(postedInterest);
       }
 
