@@ -29,6 +29,15 @@ The web component exposes a mode toggle to switch between the idealized and real
 
 ## Cautions / Usage / Other notes
 
+### How accruals are handled
+
+Beyond the general statement above regarding daily compounding deposit interest. There are some additional specifics,
+- Interest is computed daily with 20 digits of precision
+- Interest is *posted* at month end with fractional pennies rolling over to the next month
+- Loan payments are posted to a deposit account *before* that day's accrual calculation
+
+### Other notes
+
 The underlying library can be used as part of simpler term-loan and credit card interest calculators. The library, for the fun of it, uses an internally implemented arthimatic class based on decimal.js for handling monetary and related calculations. This is implemented in the 'mini-money.js' file.
 
 I do _not_ recommend separately using the Amount class. While it does support some of the needed rounding semantics and it is not well used and is more of a utility class for use within this little example calculator than a full-fledged implementation.
