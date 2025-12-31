@@ -32,9 +32,10 @@ The web component exposes a mode toggle to switch between the idealized and real
 ### How accruals are handled
 
 Beyond the general statement above regarding daily compounding deposit interest. There are some additional specifics,
+
 - Interest is computed daily with 20 digits of precision
-- Interest is *posted* at month end with fractional pennies rolling over to the next month
-- Loan payments are posted to a deposit account *before* that day's accrual calculation
+- Interest is _posted_ at month end with fractional pennies rolling over to the next month
+- Loan payments are posted to a deposit account _before_ that day's accrual calculation
 
 ### Other notes
 
