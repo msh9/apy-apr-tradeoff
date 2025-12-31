@@ -62,7 +62,6 @@ class LoanSavingsCard extends LitElement {
     const paymentText = formatMaybeCurrency(this.paymentValue, this.currency);
     const interestText = formatMaybeCurrency(this.interestValue, this.currency);
     const savingsInterestText = formatMaybeCurrency(this.results?.depositInterest, this.currency);
-    const savingsBalanceText = formatMaybeCurrency(this.results?.savingsEndBalance, this.currency);
     const loanSavingsCostText = formatMaybeCurrency(this.results?.loanSavingsCost, this.currency);
 
     return html`
