@@ -21,7 +21,7 @@ describe('calendar utilities', () => {
 
   it('computes the last day of the month', () => {
     const lastDay = lastDayOfMonth(new Date('2025-01-15'));
-    expect(lastDay.getDate()).toBe(30);
+    expect(lastDay.getUTCDate()).toBe(31);
     expect(lastDay.getMonth()).toBe(0);
   });
 
