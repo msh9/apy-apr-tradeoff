@@ -171,7 +171,6 @@ class TradeoffWidget extends LitElement {
   _renderIntro() {
     return html`
       <header class="intro">
-        <p class="eyebrow">Loan, savings, credit card</p>
         <h1>Comparing a loan, loan + savings account, and a credit card</h1>
       </header>
     `;
@@ -181,7 +180,7 @@ class TradeoffWidget extends LitElement {
     return html`
       <section class="solar-card global-card">
         <div class="field">
-          <label for="principal">Purchase amount</label>
+          <label for="principal">Purchase amount*</label>
           <p class="helper">Total price</p>
           <input
             id="principal"
@@ -263,7 +262,7 @@ class TradeoffWidget extends LitElement {
       <section class="solar-card summary-card">
         <div class="bullets">
           <p>
-            <span class="bullet-label">Loan + savings net benefit/cost:</span>
+            <span class="bullet-label">Deposit Interest Yield - Loan Interest Charges:</span>
             <span data-role="loan-savings-cost">${loanSavingsCostText}</span>
           </p>
           <p><span class="bullet-label">Plain loan cost:</span> ${loanInterestText}</p>

@@ -62,7 +62,6 @@ class LoanSavingsCard extends LitElement {
     const paymentText = formatMaybeCurrency(this.paymentValue, this.currency);
     const interestText = formatMaybeCurrency(this.interestValue, this.currency);
     const savingsInterestText = formatMaybeCurrency(this.results?.depositInterest, this.currency);
-    const savingsBalanceText = formatMaybeCurrency(this.results?.savingsEndBalance, this.currency);
     const loanSavingsCostText = formatMaybeCurrency(this.results?.loanSavingsCost, this.currency);
 
     return html`
@@ -78,7 +77,7 @@ class LoanSavingsCard extends LitElement {
         <div class="field-group">
           <p class="group-label">Term Loan Information</p>
           <div class="field">
-            <label for="loanRate">Loan Nominal Annual Rate</label>
+            <label for="loanRate">Loan Nominal Annual Rate*</label>
             <p class="helper">Enter 0% for promotional offers.</p>
             <input
               id="loanRate"
@@ -94,7 +93,7 @@ class LoanSavingsCard extends LitElement {
           </div>
 
           <div class="field">
-            <label for="termMonths">How long will you take to pay? (months)</label>
+            <label for="termMonths">How long will you take to pay? (months)*</label>
             <p class="helper">Used for loan payment calculations.</p>
             <input
               id="termMonths"
@@ -135,7 +134,7 @@ class LoanSavingsCard extends LitElement {
         <div class="field-group">
           <p class="group-label">Deposit Information</p>
           <div class="field">
-            <label for="apy">Savings or deposit APY</label>
+            <label for="apy">Savings or deposit APY*</label>
             <p class="helper">APY on the account holding future payments.</p>
             <input
               id="apy"
@@ -158,18 +157,14 @@ class LoanSavingsCard extends LitElement {
             <span data-role="deposit-interest">${savingsInterestText}</span>
           </p>
           <p>
-            <span class="label">Final savings balance after last payment:</span>
-            <span data-role="savings-balance">${savingsBalanceText}</span>
-          </p>
-          <p>
-            <span class="label">Loan + savings net cost:</span>
+            <span class="label">Deposit Interest Yield - Loan Interest Charges:</span>
             <span data-role="loan-savings-cost">${loanSavingsCostText}</span>
           </p>
           ${Number.isFinite(this.results?.loanInterest)
             ? null
             : html`
                 <p class="muted helper">
-                  We’ll calculate savings on your loan payments once you enter a loan rate on the
+                  We'll calculate savings on your loan payments once you enter a loan rate on the
                   left.
                 </p>
               `}
@@ -364,7 +359,7 @@ class LoanSavingsCard extends LitElement {
         : Number.NaN;
       const loanSavingsCost =
         Number.isFinite(depositInterest) && Number.isFinite(loanInterest)
-          ? loanInterest - depositInterest
+          ? depositInterest - loanInterest
           : Number.NaN;
 
       const combined = {

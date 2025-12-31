@@ -59,8 +59,8 @@ describe('loan-savings-card', () => {
     expect(combinedListener).toHaveBeenCalled();
     const detail = combinedListener.mock.calls.at(-1)[0];
     expect(detail.valid).toBe(true);
-    expect(detail.loanSavingsCost).toBeCloseTo(-30, 2);
+    expect(detail.loanSavingsCost).toBeCloseTo(30, 2);
     expect(shadow.querySelector('[data-role="deposit-interest"]').textContent).toMatch(/\$/);
-    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/-/);
+    expect(shadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(/\$/);
   });
 });

@@ -74,7 +74,7 @@ describe('tradeoff-widget', () => {
     expect(creditCardShadow.querySelector('[data-role="cc-rewards"]').textContent).toMatch(/\$/);
     expect(creditCardShadow.querySelector('[data-role="cc-interest"]').textContent).toMatch(/\$/);
     expect(loanSavingsShadow.querySelector('[data-role="loan-savings-cost"]').textContent).toMatch(
-      /-\$/,
+      /\$/,
     );
   });
 
